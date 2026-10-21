@@ -10,7 +10,7 @@ export default defineConfig({
       injectRegister: null,
       kit: {
         adapterFallback: 'index.html',
-        spa: { fallbackMapping: '/' },
+        spa: { fallbackMapping: '/', fallbackRevision: () => 'frost-breaker-spa' },
       },
       manifest: {
         name: 'Kids Games 6–10',
@@ -27,7 +27,7 @@ export default defineConfig({
         globPatterns: [
           '**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,gif,mp3,wav,ogg,woff,woff2,webmanifest,json,txt}',
         ],
-        globIgnores: ['**/.DS_Store', 'server/**', '**/*.map'],
+        globIgnores: ['**/.DS_Store', 'server/**', '**/*.map', '**/audio/preview.html'],
         navigateFallback: '/',
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },

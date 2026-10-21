@@ -2,8 +2,13 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { t } from '$lib/stores/locale';
-  import { getLevel, getWorld, MAX_FROST_LEVEL } from '$lib/frost-breaker/levels.js';
-  import { loadProgress, nextLevel, recordProgress } from '$lib/frost-breaker/progress.js';
+  import { getLevel, getWorld, levelToWorld, MAX_FROST_LEVEL } from '$lib/frost-breaker/levels.js';
+  import {
+    isCampaignMastered,
+    isWorldUnlocked,
+    loadProgress,
+    recordProgress,
+  } from '$lib/frost-breaker/progress.js';
   import { createFrostEngine } from '$lib/frost-breaker/engine.js';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
   import WinOverlay from '$lib/components/WinOverlay.svelte';
@@ -32,6 +37,13 @@
 
   const levelNumber = $derived(getLevel(level).level);
   const world = $derived(getWorld(levelNumber));
+
+  /** Only advance when the next level's world is open; never step backward. */
+  const nextTarget = $derived.by(() => {
+    if (levelNumber >= MAX_FROST_LEVEL) return null;
+    const candidate = levelNumber + 1;
+    return isWorldUnlocked(progress, levelToWorld(candidate)) ? candidate : null;
+  });
 
   let hud = $state({
     level: 0,
@@ -87,9 +99,8 @@
   }
 
   function next() {
-    const target = nextLevel(progress);
-    if (target === level) goto('/games/frost-breaker');
-    else goto(`/games/frost-breaker/play/${target}`);
+    if (nextTarget !== null) goto(`/games/frost-breaker/play/${nextTarget}`);
+    else goto('/games/frost-breaker');
   }
 
   function back() {
@@ -180,8 +191,8 @@
         {level}
         {bestStars}
         maxLevel={MAX_FROST_LEVEL}
-        campaignComplete={progress.completed.every(Boolean)}
-        hasNext={nextLevel(progress) !== level}
+        campaignComplete={isCampaignMastered(progress)}
+        hasNext={nextTarget !== null}
         onRetry={retry}
         onNext={next}
         onBack={back}

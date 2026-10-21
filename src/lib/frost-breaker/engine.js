@@ -399,6 +399,8 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
         }
         p.x += p.vx * dt;
         p.y += p.vy * dt;
+        p.x = clamp(p.x, WALLS.left + p.r, WALLS.right - p.r);
+        p.y = Math.max(p.y, WALLS.top + p.r);
         p.life -= dt;
         p.trail.push({ x: p.x, y: p.y });
         if (p.trail.length > 14) p.trail.shift();
