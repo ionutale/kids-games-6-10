@@ -4,18 +4,20 @@ All audio is generated locally with the **Studio** app (`~/developer-playground/
 
 ## Files
 
-| File             | Use                         | Source                                                                     |
-| ---------------- | --------------------------- | -------------------------------------------------------------------------- |
-| `tap.mp3`        | Pod selection / UI tick     | Procedural `/sfx` preset `click` (take `7b13061731344fc5896d9fee40a1e362`) |
-| `launch.mp3`     | Slingshot release           | `/sfx/text` take `17bd1971744c41a4ae67d8c1fd7d1648`                        |
-| `stick.mp3`      | Spike attaches to ice       | `/sfx/text` take `606de8af1c2942af99b710d542949f34`                        |
-| `crack.mp3`      | Ice shatter                 | `/sfx/text` take `edef47c836d2480a9b1acdfcda3e4ef7`                        |
-| `crystal.mp3`    | Copter crystal pop          | `/sfx/text` take `def0e757c0c7489fa0fe29171245b37a`                        |
-| `split.mp3`      | Split pod breaks into three | `/sfx/text` take `2d4fa4fd511643ad957ffa0fd2fa9f29`                        |
-| `core.mp3`       | Crystal-core chain blast    | `/sfx/text` take `b770bbfecd154ea78dd979223af4036b`                        |
-| `win.mp3`        | Level result / fanfare      | `/sfx/text` take `1d0cef24d0ad4c1ea26f30e86e986a87`                        |
-| `softfail.mp3`   | “So close!” result          | `/sfx/text` take `893b5f9ba250489abc3b6ee3d3c4e0bd`                        |
-| `frost-loop.mp3` | Background music loop       | `/music` take `4aaaa9b9bc1b48038b7fcbeab7ce103c`                           |
+| File              | Use                         | Source                                                                     |
+| ----------------- | --------------------------- | -------------------------------------------------------------------------- |
+| `tap.mp3`         | Pod selection / UI tick     | Procedural `/sfx` preset `click` (take `7b13061731344fc5896d9fee40a1e362`) |
+| `launch.mp3`      | Slingshot release           | `/sfx/text` take `17bd1971744c41a4ae67d8c1fd7d1648`                        |
+| `stick.mp3`       | Spike attaches to ice       | `/sfx/text` take `606de8af1c2942af99b710d542949f34`                        |
+| `crack.mp3`       | Ice shatter                 | `/sfx/text` take `edef47c836d2480a9b1acdfcda3e4ef7`                        |
+| `crystal.mp3`     | Copter crystal pop          | `/sfx/text` take `def0e757c0c7489fa0fe29171245b37a`                        |
+| `split.mp3`       | Split pod breaks into three | `/sfx/text` take `2d4fa4fd511643ad957ffa0fd2fa9f29`                        |
+| `core.mp3`        | Crystal-core chain blast    | `/sfx/text` take `b770bbfecd154ea78dd979223af4036b`                        |
+| `win.mp3`         | Level result / fanfare      | `/sfx/text` take `1d0cef24d0ad4c1ea26f30e86e986a87`                        |
+| `softfail.mp3`    | “So close!” result          | `/sfx/text` take `893b5f9ba250489abc3b6ee3d3c4e0bd`                        |
+| `frost-loop.mp3`  | Background music loop       | `/music` take `4aaaa9b9bc1b48038b7fcbeab7ce103c`                           |
+| `garden-loop.mp3` | Garden level music loop     | `/music` take `f3f8fab9fffc462dae5157e9c29f0609` (seed 7)                  |
+| `royal-loop.mp3`  | Royal level music loop      | `/music` take `ff6517a1621b4134a2a4db08d45b811d` (seed 21)                 |
 
 ## Prompts
 
@@ -28,11 +30,14 @@ All audio is generated locally with the **Studio** app (`~/developer-playground/
 - **win** — “short playful victory fanfare, icy bells and warm marimba, joyful, no vocals”
 - **softfail** — “gentle soft chime, almost there, warm and encouraging, no sadness, no music”
 - **frost-loop** — “calm playful winter arcade music loop, soft marimba, glass bells, warm bass, gentle pulse, snowy night, no vocals, seamless loop”
+- **garden-loop** — “gentle magical garden music loop, 90 BPM, warm marimba, soft celesta, delicate bells, warm pad, subtle shaker, friendly curious playful children game soundtrack, no vocals, no drums, no dramatic build, seamless loop”
+- **royal-loop** — “playful majestic royal celebration loop at 110 BPM, steady four on the floor pulse, soft string section, warm brass fanfare, bright bells, light hand percussion, triumphant yet friendly and child friendly video game finale theme, instrumental only, no vocals, no singing, no war sounds, no loud drums, seamless loop”
 
 ## Processing
 
 - Effects: leading/trailing silence removed, trimmed to 0.12–1.7 s, 80 ms fade-out, loudness-normalised to about −18 LUFS, mono 128 kbps MP3.
 - Music: trimmed to 19.2 s, 1 s equal-power crossfade from the end into the start for a seamless loop, 18.2 s, stereo 160 kbps MP3, about −20 LUFS.
+- `garden-loop.mp3` / `royal-loop.mp3`: generated from 19.0 s Stable Audio 3 takes, 0.8 s equal-power (`qsin`) crossfade from the tail into the head, loudness-normalised to −20 LUFS (measured −19.3 and −18.4 LUFS), stereo 160 kbps MP3, 18.2 s. `garden-loop.mp3` was measured at 90 BPM by onset-grid analysis; `royal-loop.mp3` was measured at 110 BPM (27/75 strong onsets on a 110 BPM grid).
 - Runtime: Web Audio buffers (`decodeAudioData`) with a procedural WebAudio fallback if a file is missing or the browser is still locked. Background music starts after the first user gesture (iOS-safe). A compressor/limiter sits before the destination so overlapping ice hits do not clip.
 
 ## Regenerating
