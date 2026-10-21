@@ -6,4 +6,10 @@
     "directory": "./build",
     "not_found_handling": "single-page-application",
   },
+  "routes": [
+    {
+      "pattern": "kids-games-6-10.aiu-media.com",
+      "custom_domain": true,
+    },
+  ],
 }
