@@ -784,7 +784,7 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
     ctx.lineWidth = 3;
     ctx.shadowColor = 'rgba(125, 211, 252, 0.5)';
     ctx.shadowBlur = 22;
-    for (const poly of built.shape.polygons) {
+    for (const poly of built.polygons) {
       ctx.beginPath();
       poly.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
       ctx.closePath();

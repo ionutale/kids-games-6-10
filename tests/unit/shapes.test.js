@@ -80,4 +80,30 @@ describe('storybook sculpture set', () => {
       expect(largestComponentSize(built), id).toBe(built.total);
     }
   });
+
+  it('scales remixes around the sculpture centre', () => {
+    const normal = buildCells('star');
+    const large = buildCells('star', { scale: 1.06 });
+    const small = buildCells('star', { scale: 0.9 });
+    expect(large.total).toBeGreaterThan(normal.total);
+    expect(small.total).toBeLessThan(normal.total);
+    expect(large.polygons[0][0].x).toBeCloseTo(360 + (normal.polygons[0][0].x - 360) * 1.06);
+  });
+
+  it('selects one, two, or three authored cores', () => {
+    for (const count of [1, 2, 3]) {
+      expect(buildCells('star', { coreCount: count }).cores, String(count)).toHaveLength(count);
+    }
+    expect(buildCells('star', { coreCount: 0 }).cores).toHaveLength(0);
+    expect(buildCells('star', { coreIndexes: [0, 2] }).cores).toHaveLength(2);
+  });
+
+  it('keeps scaled remixes connected', () => {
+    for (const id of ALL) {
+      for (const scale of [0.96, 1.05]) {
+        const built = buildCells(id, { scale });
+        expect(largestComponentSize(built), `${id} @ ${scale}`).toBe(built.total);
+      }
+    }
+  });
 });
