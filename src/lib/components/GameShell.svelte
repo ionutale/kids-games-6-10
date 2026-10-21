@@ -9,7 +9,7 @@
   <header class="bar">
     <a class="icon-btn" href={backHref} aria-label={$t('back')}>←</a>
     <div class="heading">
-      <span class="kicker">Kids Games 5–8</span>
+      <span class="kicker">{$t('appTitle')}</span>
       <h1>{title}</h1>
     </div>
     <SoundToggle />

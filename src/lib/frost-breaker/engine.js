@@ -2,6 +2,7 @@ import { buildCells, CELL } from './grid.js';
 import { getLevel } from './levels.js';
 import { allPodsUsed, percentage, shownPct, starsFor, POD_IDS, PASS_PCT } from './rules.js';
 import { sfx, unlockAudio, startMusic, stopMusic } from './audio.js';
+import { WALLS, bumperCollision, reflectVelocity, traceWallPath } from './walls.js';
 
 const W = 720;
 const H = 1280;
@@ -43,6 +44,8 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
   canvas.height = H * dpr;
 
   const config = getLevel(level);
+  const bumpers = config.bumpers ?? [];
+  const accent = config.accent ?? '#7dd3fc';
   let built = buildCells(config.shape);
   let cells = built.cells;
   let grid = built.grid;
@@ -141,7 +144,83 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
     for (let d = 0; d < maxLen; d += 8) {
       if (hitCell(x + dx * d, y + dy * d, 4)) return d;
     }
-    return maxLen;
+    return null;
+  }
+
+  function spawnWallSpark(x, y, side) {
+    const inward =
+      side === 'left'
+        ? { x: 1, y: 0 }
+        : side === 'right'
+          ? { x: -1, y: 0 }
+          : side === 'top'
+            ? { x: 0, y: 1 }
+            : { x: 0, y: -1 };
+    for (let i = 0; i < 8; i++) {
+      particles.push({
+        kind: 'spark',
+        x,
+        y,
+        vx: inward.x * rand(40, 190) + rand(-55, 55),
+        vy: inward.y * rand(40, 190) + rand(-55, 55),
+        gravity: 30,
+        life: rand(0.18, 0.4),
+        maxLife: 0.4,
+        size: rand(1.4, 3.4),
+        color: '#bff3ff',
+      });
+    }
+  }
+
+  /**
+   * Reflect a live projectile off the frosted rails and interior bumpers.
+   * The ceiling counts; the bottom is open so a miss can fall past the
+   * slingshot. Ghosts are intentionally not sent through this path.
+   */
+  function bounceWalls(p) {
+    if (p.bounces >= WALLS.maxBounces) return false;
+    const sides = [];
+
+    if (p.x - p.r < WALLS.left) {
+      p.x = WALLS.left + p.r;
+      if (p.vx < 0) sides.push('left');
+    } else if (p.x + p.r > WALLS.right) {
+      p.x = WALLS.right - p.r;
+      if (p.vx > 0) sides.push('right');
+    }
+
+    if (p.y - p.r < WALLS.top) {
+      p.y = WALLS.top + p.r;
+      if (p.vy < 0) sides.push('top');
+    }
+
+    for (const bumper of bumpers) {
+      const hit = bumperCollision(p.x, p.y, p.r, bumper);
+      if (!hit) continue;
+      p.x = hit.x;
+      p.y = hit.y;
+      const outward =
+        hit.side === 'left'
+          ? p.vx > 0
+          : hit.side === 'right'
+            ? p.vx < 0
+            : hit.side === 'top'
+              ? p.vy > 0
+              : p.vy < 0;
+      if (outward) sides.push(hit.side);
+    }
+
+    if (!sides.length) return false;
+    for (const side of sides) {
+      const next = reflectVelocity(p.vx, p.vy, side);
+      p.vx = next.x;
+      p.vy = next.y;
+    }
+    p.bounces += 1;
+    spawnWallSpark(p.x, p.y, sides[0]);
+    shake = Math.max(shake, 3);
+    sfx.bounce();
+    return true;
   }
 
   function destroyCell(cell) {
@@ -253,16 +332,20 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
       state: 'fly',
       timer: 0,
       splitDone: false,
+      bounces: 0,
       dead: false,
     };
   }
 
   function speedFor(type, power) {
-    return type === 'ghost' ? 620 : 1120 + 760 * power;
+    if (type === 'ghost') return 620;
+    if (type === 'split') return 760 + 420 * power;
+    return 1120 + 760 * power;
   }
 
   function splitProjectile(parent) {
     const angle = Math.atan2(parent.vy, parent.vx);
+    const childSpeed = 520;
     for (const offset of [-0.42, 0, 0.42]) {
       const a = angle + offset;
       projectiles.push(
@@ -270,8 +353,8 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
           'split-child',
           parent.x,
           parent.y,
-          Math.cos(a) * 720,
-          Math.sin(a) * 720,
+          Math.cos(a) * childSpeed,
+          Math.sin(a) * childSpeed,
           parent.power,
           true,
         ),
@@ -327,6 +410,7 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
             p.dropsLeft--;
             p.dropTimer = 0.12;
           }
+          bounceWalls(p);
         }
         p.life -= dt;
         p.trail.push({ x: p.x, y: p.y });
@@ -363,6 +447,7 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
           p.dead = true;
           break;
         }
+        bounceWalls(p);
       }
       p.life -= dt;
       p.trail.push({ x: p.x, y: p.y });
@@ -774,6 +859,77 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
     }
   }
 
+  function drawWalls() {
+    const rail = (x, y, w, h) => {
+      const g = ctx.createLinearGradient(x, y, x + w, y + h);
+      g.addColorStop(0, 'rgba(157, 228, 255, 0.30)');
+      g.addColorStop(0.45, 'rgba(56, 189, 248, 0.14)');
+      g.addColorStop(1, 'rgba(2, 14, 24, 0.58)');
+      ctx.fillStyle = g;
+      roundRect(ctx, x, y, w, h, 10);
+      ctx.fill();
+      ctx.strokeStyle = accent;
+      ctx.globalAlpha = 0.28;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.20)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + 6, y + 6);
+      ctx.lineTo(x + w - 6, y + 6);
+      ctx.stroke();
+    };
+
+    ctx.save();
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 16;
+
+    rail(WALLS.left - WALLS.thickness, 190, WALLS.thickness, 1000);
+    rail(WALLS.right, 190, WALLS.thickness, 1000);
+    rail(
+      WALLS.left - WALLS.thickness,
+      WALLS.top - WALLS.thickness,
+      WALLS.right - WALLS.left + WALLS.thickness * 2,
+      WALLS.thickness,
+    );
+
+    for (const bumper of bumpers) {
+      const g = ctx.createLinearGradient(bumper.x, bumper.y, bumper.x + bumper.w, bumper.y + bumper.h);
+      g.addColorStop(0, 'rgba(207, 246, 255, 0.26)');
+      g.addColorStop(0.48, 'rgba(32, 112, 156, 0.42)');
+      g.addColorStop(1, 'rgba(3, 20, 34, 0.86)');
+      ctx.fillStyle = g;
+      roundRect(ctx, bumper.x, bumper.y, bumper.w, bumper.h, 12);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = accent;
+      ctx.globalAlpha = 0.62;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(bumper.x + 9, bumper.y + 9);
+      ctx.lineTo(bumper.x + bumper.w - 9, bumper.y + 9);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(217, 247, 255, 0.55)';
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(bumper.x + bumper.w * (0.28 + i * 0.22), bumper.y + bumper.h - 13, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 16;
+    }
+    ctx.restore();
+  }
+
   function drawSlingshot() {
     const pull = drag.active && phase === 'aiming' ? getPull() : { px: 0, py: -62 };
     const pouchX = clamp(SLING.x + pull.px, 58, W - 58);
@@ -846,6 +1002,30 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
     ctx.restore();
   }
 
+  function traceAimPath(dir) {
+    const trace = traceWallPath(SLING.x, SLING.spawnY, dir.x, dir.y, {
+      maxLen: 1100,
+      maxBounces: 3,
+      bumpers,
+    });
+    const points = [trace.points[0]];
+    for (let i = 1; i < trace.points.length; i++) {
+      const a = points[points.length - 1];
+      const b = trace.points[i];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const segLen = Math.hypot(dx, dy);
+      if (segLen < 1) continue;
+      const d = raycast(a.x, a.y, dx / segLen, dy / segLen, segLen);
+      if (d !== null) {
+        points.push({ x: a.x + (dx / segLen) * d, y: a.y + (dy / segLen) * d });
+        return { points, hitCell: true };
+      }
+      points.push(b);
+    }
+    return { points, hitCell: false };
+  }
+
   function drawAim() {
     if (!drag.active || phase !== 'aiming' || pods[selectedPod] <= 0) return;
     const pull = getPull();
@@ -854,28 +1034,47 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
     const dir = { x: -pull.px / len, y: -pull.py / len };
     if (dir.y > -0.12) return;
 
-    const maxLen = selectedPod === 'ghost' ? 1100 : raycast(SLING.x, SLING.spawnY, dir.x, dir.y, 1100);
-    const dots = Math.floor(maxLen / 24);
-    for (let i = 0; i < dots; i++) {
-      const t = i * 24;
-      const x = SLING.x + dir.x * t;
-      const y = SLING.spawnY + dir.y * t;
-      const alpha = 0.55 * (1 - t / Math.max(1, maxLen)) + 0.08;
-      ctx.fillStyle =
-        selectedPod === 'ghost' ? `rgba(196, 181, 253, ${alpha})` : `rgba(125, 211, 252, ${alpha})`;
-      ctx.beginPath();
-      ctx.arc(x, y, 3.2, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    const path =
+      selectedPod === 'ghost'
+        ? {
+            points: [
+              { x: SLING.x, y: SLING.spawnY },
+              { x: SLING.x + dir.x * 1100, y: SLING.spawnY + dir.y * 1100 },
+            ],
+            hitCell: false,
+          }
+        : traceAimPath(dir);
+    const maxLen = 1100;
+    let travelled = 0;
 
-    if (selectedPod !== 'ghost' && maxLen < 1090) {
-      const x = SLING.x + dir.x * maxLen;
-      const y = SLING.spawnY + dir.y * maxLen;
-      ctx.strokeStyle = 'rgba(191, 243, 255, 0.8)';
+    for (let i = 1; i < path.points.length; i++) {
+      const a = path.points[i - 1];
+      const b = path.points[i];
+      const segLen = Math.hypot(b.x - a.x, b.y - a.y);
+      if (segLen < 1) continue;
+      const steps = Math.max(1, Math.ceil(segLen / 24));
+      for (let s = 0; s < steps; s++) {
+        const t = s / steps;
+        const alpha = 0.55 * (1 - (travelled + segLen * t) / maxLen) + 0.08;
+        ctx.globalAlpha = Math.max(0.08, alpha);
+        ctx.fillStyle = selectedPod === 'ghost' ? '#c4b5fd' : accent;
+        ctx.beginPath();
+        ctx.arc(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      travelled += segLen;
+    }
+    ctx.globalAlpha = 1;
+
+    if (path.hitCell) {
+      const end = path.points[path.points.length - 1];
+      ctx.strokeStyle = accent;
+      ctx.globalAlpha = 0.8;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(x, y, 11, 0, Math.PI * 2);
+      ctx.arc(end.x, end.y, 11, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -1074,6 +1273,7 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
     drawSculptureOutline();
     drawCells();
     drawCores();
+    drawWalls();
     drawSlingshot();
     drawAim();
     drawProjectiles();

@@ -1,4 +1,4 @@
-# Kids Games 5–8
+# Kids Games 6–10
 
 Big-kid games for ages 6–10. First game: **Frost Breaker**.
 
@@ -27,7 +27,7 @@ pnpm dev
 | `pnpm lint`    | Prettier check                         |
 | `pnpm format`  | Prettier write                         |
 
-Requires Node 20+ and pnpm. Deploy the `build/` directory to Vercel; `vercel.json` adds the SPA fallback.
+Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `pnpm deploy`; `wrangler.jsonc` serves `build/` with SPA fallback.
 
 ## What is in the box
 
@@ -36,7 +36,7 @@ Requires Node 20+ and pnpm. Deploy the `build/` directory to Vercel; `vercel.jso
 - **Game** (`/games/frost-breaker/play/[1–10]`) — 720×1280 playfield, drag-back slingshot, dotted aim line, live 90% HUD, pod tray, soft-fail and star result overlays.
 - **Rules** (`src/lib/frost-breaker/rules.js`) — 90% clears, 95% is two stars, 100% is three; no 100% display until every cell is gone.
 - **Sculptures** (`src/lib/frost-breaker/shapes.js`) — star, fish, cat, rocket, castle, snowman, dinosaur, butterfly, lighthouse, crown. Cell-filled at 26 px; 1–3 crystal cores per sculpture.
-- **Engine** (`src/lib/frost-breaker/engine.js`) — deterministic cell fracture, connected-mass collapse, spike/ghost/copter/split behaviours, particles and screen shake.
+- **Engine** (`src/lib/frost-breaker/engine.js`) — deterministic cell fracture, connected-mass collapse, spike/ghost/copter/split behaviours, frosted rails, bank-shot aim preview, particles and screen shake. Interior bumpers are supported by `walls.js` and land with the 50-level campaign.
 - **Audio** (`src/lib/frost-breaker/audio.js`, `static/audio/`) — Studio-generated SFX and an 18.2 s seamless music loop, with a procedural WebAudio fallback. See [docs/audio.md](docs/audio.md).
 - **Locales** — en, it, ro, de, fr, zh; every key is parity-tested.
 - **PWA** — static adapter, service worker precache, manifest, offline deep links.
@@ -74,13 +74,9 @@ prototype/frost-breaker.html  throwaway feel test
 - Frosted-aurora art direction; hand-rolled AABB + destructible cell grid.
 - Fresh SvelteKit app with deliberate ports from the 2–5 hub (PWA, ladder, shell, audio patterns).
 
-## Open question
+## Naming
 
-The repository and display name say **5–8**, while the chosen audience is **6–10**. Pick one before launch:
-
-1. keep the repo name and change the display/brand to **Big Kids** (no age in the name), or
-2. keep the display name and change it to **Kids Games 6–10**, or
-3. keep both and accept the mismatch.
+The display name is **Kids Games 6–10**. The repository directory and package name stay `kids-games-5-8` for continuity with the project’s original home.
 
 ## Next
 
@@ -88,4 +84,4 @@ The repository and display name say **5–8**, while the chosen audience is **6�
 - Final ice-sculpture art pass (the current silhouettes are deliberately blocky cell mosaics).
 - More Studio sound variants and a second music loop.
 - End-to-end Playwright coverage for hub → landing → game → result → next level.
-- Decide the display-name question above, then deploy.
+- Deploy to Cloudflare Pages (`build/` + `static/_redirects`).

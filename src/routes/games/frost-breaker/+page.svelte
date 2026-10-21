@@ -71,6 +71,7 @@
         <span class="howicon" aria-hidden="true">🎯</span>
         <h3>{$t('howToPlay')}</h3>
         <p>{$t('howToDrag')}</p>
+        <p class="wallhint">{$t('howToWalls')}</p>
       </article>
       <article class="howcard glass">
         <span class="howicon" aria-hidden="true">💎</span>
@@ -264,5 +265,8 @@
     color: var(--ink-soft);
     font-size: 13.5px;
     line-height: 1.45;
+  }
+  .howcard .wallhint {
+    color: var(--mint);
   }
 </style>

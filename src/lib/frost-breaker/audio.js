@@ -8,6 +8,7 @@ const SOUND_FILES = {
   stick: '/audio/stick.mp3',
   crack: '/audio/crack.mp3',
   crystal: '/audio/crystal.mp3',
+  bounce: '/audio/bounce.mp3',
   split: '/audio/split.mp3',
   core: '/audio/core.mp3',
   win: '/audio/win.mp3',
@@ -217,6 +218,11 @@ function fallbackCrystal() {
   toneAt(1320, 0.09, 'sine', 0.018, 0, -420);
 }
 
+function fallbackBounce() {
+  noiseAt(0.08, 0.02, 2000);
+  toneAt(520, 0.08, 'triangle', 0.022, 0, -180);
+}
+
 function fallbackSplit() {
   toneAt(540, 0.08, 'triangle', 0.025, 0, 280);
   toneAt(760, 0.08, 'triangle', 0.02, 0.06, 220);
@@ -274,6 +280,9 @@ export const sfx = {
   },
   crystal() {
     if (!playSample('crystal', 0.55)) fallbackCrystal();
+  },
+  bounce() {
+    if (!playSample('bounce', 0.5)) fallbackBounce();
   },
   split() {
     if (!playSample('split', 0.62)) fallbackSplit();

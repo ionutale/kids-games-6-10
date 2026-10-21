@@ -13,8 +13,8 @@ export default defineConfig({
         spa: { fallbackMapping: '/' },
       },
       manifest: {
-        name: 'Kids Games 5–8',
-        short_name: 'Kids 5–8',
+        name: 'Kids Games 6–10',
+        short_name: 'Kids 6–10',
         description: 'Big-kid games for ages 6–10',
         theme_color: '#071a2b',
         background_color: '#04101f',
