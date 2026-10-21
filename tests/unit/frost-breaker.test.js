@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { allPodsUsed, passes, percentage, shownPct, starsFor } from '$lib/frost-breaker/rules.js';
 import { buildCells } from '$lib/frost-breaker/grid.js';
-import { LEVELS, getLevel } from '$lib/frost-breaker/levels.js';
+import { LEVELS, getLevel, clampFrostLevel } from '$lib/frost-breaker/levels.js';
 import { mergeStars } from '$lib/frost-breaker/progress.js';
-import { clampLevel } from '$lib/ladder/progress.js';
 import { MESSAGES, LOCALES } from '$lib/i18n/messages.js';
 
 function largestComponentSize(built) {
@@ -68,10 +67,10 @@ describe('90% / star rules', () => {
   });
 });
 
-describe('ten sculptures', () => {
-  it('has ten distinct shapes with all four pods available', () => {
-    expect(LEVELS).toHaveLength(10);
-    expect(new Set(LEVELS.map((l) => l.shape)).size).toBe(10);
+describe('fifty sculptures', () => {
+  it('has fifty levels across twenty distinct shapes with all four pods available', () => {
+    expect(LEVELS).toHaveLength(50);
+    expect(new Set(LEVELS.map((l) => l.shape)).size).toBe(20);
     for (const level of LEVELS) {
       for (const pod of ['spike', 'ghost', 'copter', 'split']) {
         expect(level.pods[pod]).toBeGreaterThan(0);
@@ -96,13 +95,14 @@ describe('ten sculptures', () => {
     }
   });
 
-  it('clamps out-of-range levels to the shared ladder', () => {
+  it('clamps out-of-range levels to the campaign', () => {
     expect(getLevel(1).shape).toBe('star');
-    expect(getLevel(10).shape).toBe('crown');
+    expect(getLevel(10).shape).toBe('fish');
+    expect(getLevel(50).shape).toBe('crown');
     expect(getLevel(0).shape).toBe('star');
     expect(getLevel(99).shape).toBe('crown');
-    expect(clampLevel('5')).toBe(5);
-    expect(clampLevel('nope')).toBe(1);
+    expect(clampFrostLevel('5')).toBe(5);
+    expect(clampFrostLevel('nope')).toBe(1);
   });
 });
 
@@ -123,6 +123,6 @@ describe('best-star persistence shape', () => {
     expect(better[2]).toBe(3);
     const worse = mergeStars(better, 3, 1);
     expect(worse[2]).toBe(3);
-    expect(worse).toHaveLength(10);
+    expect(worse).toHaveLength(50);
   });
 });
