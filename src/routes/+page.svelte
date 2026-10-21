@@ -1,19 +1,24 @@
 <script>
   import { onMount } from 'svelte';
   import { t, locale, setLocale, LOCALES } from '$lib/stores/locale';
-  import { loadLevel, loadMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
+  import { WORLDS, getWorld } from '$lib/frost-breaker/levels.js';
+  import {
+    emptyProgress,
+    isCampaignMastered,
+    isWorldComplete,
+    isWorldUnlocked,
+    loadProgress,
+    nextLevel,
+  } from '$lib/frost-breaker/progress.js';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
 
   let showSettings = $state(false);
-  let progress = $state({ level: 1, mastered: false });
-
-  const dots = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1);
+  let progress = $state(emptyProgress());
+  const currentWorldId = $derived(getWorld(nextLevel(progress)).id);
+  const mastered = $derived(isCampaignMastered(progress));
 
   onMount(() => {
-    progress = {
-      level: loadLevel('frost-breaker'),
-      mastered: loadMastered('frost-breaker'),
-    };
+    progress = loadProgress();
   });
 </script>
 
@@ -31,17 +36,18 @@
 
   <main class="grid">
     <a class="tile frost" href="/games/frost-breaker">
-      {#if progress.mastered}<span class="cap" aria-hidden="true">🎓</span>{/if}
+      {#if mastered}<span class="cap" aria-hidden="true">🎓</span>{/if}
       <span class="tileicon" aria-hidden="true">❄️</span>
       <span class="tilename">{$t('frostName')}</span>
       <span class="tiledesc">{$t('frostDesc')}</span>
       <span class="mini" aria-hidden="true">
-        {#each dots as n}
+        {#each WORLDS as world (world.id)}
           <span
             class="dot"
-            class:done={progress.level > n}
-            class:current={progress.level === n}
-            class:mastered={progress.mastered}
+            class:done={isWorldComplete(progress, world.id) && !mastered}
+            class:current={currentWorldId === world.id && !mastered}
+            class:locked={!isWorldUnlocked(progress, world.id) && !mastered}
+            class:mastered
           ></span>
         {/each}
       </span>
@@ -222,6 +228,10 @@
   .dot.current {
     background: var(--cyan);
     box-shadow: 0 0 6px var(--cyan);
+  }
+  .dot.locked {
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
   }
   .dot.mastered {
     background: var(--gold);

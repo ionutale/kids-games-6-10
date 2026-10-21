@@ -1,20 +1,25 @@
 <script>
   import { onMount } from 'svelte';
   import GameShell from '$lib/components/GameShell.svelte';
+  import ShapePreview from '$lib/components/ShapePreview.svelte';
   import { t } from '$lib/stores/locale';
-  import { loadLevel, loadMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
-  import { loadStars } from '$lib/frost-breaker/progress.js';
+  import { WORLDS, getWorld } from '$lib/frost-breaker/levels.js';
+  import {
+    emptyProgress,
+    isCampaignMastered,
+    isWorldUnlocked,
+    loadProgress,
+    nextLevel,
+    worldStars,
+  } from '$lib/frost-breaker/progress.js';
 
-  let current = $state(1);
-  let mastered = $state(false);
-  let stars = $state(Array(MAX_LEVEL).fill(0));
-
-  const levels = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1);
+  let progress = $state(emptyProgress());
+  const current = $derived(nextLevel(progress));
+  const currentWorld = $derived(getWorld(current));
+  const mastered = $derived(isCampaignMastered(progress));
 
   onMount(() => {
-    current = loadLevel('frost-breaker');
-    mastered = loadMastered('frost-breaker');
-    stars = loadStars();
+    progress = loadProgress();
   });
 </script>
 
@@ -27,41 +32,61 @@
     <section class="hero glass">
       <span class="heroicon" aria-hidden="true">❄️</span>
       <div class="herotext">
-        <span class="pill"
-          >{$t('currentLevel')}
-          {current}{#if mastered}
-            · {$t('mastered')}{/if}</span
-        >
+        <span class="pill">
+          {$t('currentLevel')} · {$t(currentWorld.nameKey)}{#if mastered}
+            · {$t('mastered')}{/if}
+        </span>
         <h2>{$t('frostName')}</h2>
         <p>{$t('frostDesc')}</p>
       </div>
-      <a class="btn primary play" href={`/games/frost-breaker/play/${current}`}>
+      <a class="btn primary hero-play" href={`/games/frost-breaker/play/${current}`}>
         ▶ {$t('playLevel', { n: current })}
       </a>
     </section>
 
-    <section class="levels glass">
+    <section class="worlds glass">
       <div class="sectionhead">
         <h3>{$t('levelSelect')}</h3>
         {#if mastered}<span class="cap" aria-hidden="true">🎓</span>{/if}
       </div>
-      <div class="levelgrid">
-        {#each levels as n}
-          <a
-            class="level"
-            class:current={n === current}
-            class:mastered={n === MAX_LEVEL && mastered}
-            href={`/games/frost-breaker/play/${n}`}
-            aria-label={`${$t('level', { n })}${stars[n - 1] ? ` · ${stars[n - 1]}★` : ''}`}
-          >
-            <span class="num">{n}</span>
-            <span class="pips" aria-hidden="true">
-              {#each [1, 2, 3] as k}
-                <span class="pip" class:on={stars[n - 1] >= k}></span>
-              {/each}
-            </span>
-            {#if n === MAX_LEVEL && mastered}<span class="grad" aria-hidden="true">🎓</span>{/if}
-          </a>
+      <div class="worldgrid">
+        {#each WORLDS as world (world.id)}
+          {@const unlocked = isWorldUnlocked(progress, world.id)}
+          {@const stars = worldStars(progress, world.id)}
+          {@const isCurrent = currentWorld.id === world.id}
+          {#if unlocked}
+            <a
+              class="wcard"
+              class:is-current={isCurrent}
+              href={`/games/frost-breaker/world/${world.id}`}
+              style:--accent={world.accent}
+            >
+              <span class="num">{String(world.id).padStart(2, '0')}</span>
+              <span class="wname">{$t(world.nameKey)}</span>
+              <span class="shapes" aria-hidden="true">
+                {#each world.shapes as shape (shape)}
+                  <ShapePreview shapeId={shape} size={64} />
+                {/each}
+              </span>
+              <span class="pips" aria-hidden="true">
+                {#each stars as star}
+                  <span class="pip" class:on={star > 0} class:gold={star === 3}></span>
+                {/each}
+              </span>
+              {#if stars.every((s) => s === 3)}<span class="badge" aria-hidden="true">🎓</span>{/if}
+            </a>
+          {:else}
+            <div class="wcard locked" aria-disabled="true" style:--accent={world.accent}>
+              <span class="num">{String(world.id).padStart(2, '0')}</span>
+              <span class="wname">{$t(world.nameKey)}</span>
+              <span class="shapes" aria-hidden="true">
+                {#each world.shapes as shape (shape)}
+                  <ShapePreview shapeId={shape} size={64} />
+                {/each}
+              </span>
+              <span class="lock" aria-hidden="true">🔒</span>
+            </div>
+          {/if}
         {/each}
       </div>
     </section>
@@ -132,7 +157,7 @@
     line-height: 1.45;
     max-width: 460px;
   }
-  .play {
+  .hero-play {
     flex: 0 0 auto;
     padding: 15px 26px;
     font-size: 18px;
@@ -147,12 +172,12 @@
     .herotext {
       align-items: center;
     }
-    .play {
+    .hero-play {
       width: 100%;
     }
   }
 
-  .levels {
+  .worlds {
     padding: 20px;
     border-radius: var(--radius-lg);
   }
@@ -170,68 +195,107 @@
     font-size: 20px;
     filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.55));
   }
-  .levelgrid {
+  .worldgrid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 10px;
+    gap: 12px;
   }
-  .level {
+  @media (max-width: 860px) {
+    .worldgrid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 560px) {
+    .worldgrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .wcard {
     position: relative;
-    min-height: 70px;
-    border-radius: 16px;
-    border: 1px solid var(--line);
-    background: rgba(6, 24, 40, 0.62);
+    padding: 12px 10px 14px;
+    border-radius: 18px;
+    border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+    background: linear-gradient(
+      168deg,
+      color-mix(in srgb, var(--accent) 10%, rgba(6, 24, 40, 0.62)),
+      rgba(5, 20, 34, 0.7)
+    );
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 7px;
+    gap: 6px;
+    text-align: center;
     transition:
       transform 0.14s var(--ease),
       border-color 0.16s ease,
       background 0.16s ease;
   }
-  .level:hover {
-    border-color: var(--line-strong);
-    background: rgba(12, 42, 65, 0.8);
+  .wcard:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
   }
-  .level:active {
-    transform: scale(0.96);
+  .wcard:active {
+    transform: scale(0.97);
   }
-  .level.current {
-    border-color: rgba(125, 211, 252, 0.9);
-    background: rgba(18, 57, 84, 0.9);
+  .wcard.locked {
+    opacity: 0.55;
+    filter: grayscale(0.7);
+  }
+  .wcard.is-current {
+    border-color: var(--accent);
     box-shadow:
-      0 0 0 2px rgba(125, 211, 252, 0.14),
-      0 0 22px rgba(125, 211, 252, 0.22);
+      0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent),
+      0 0 24px color-mix(in srgb, var(--accent) 35%, transparent);
   }
   .num {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--ink-soft);
+  }
+  .wcard.is-current .num,
+  .wcard:hover .num {
     color: var(--ink);
   }
-  .level.current .num {
-    color: #d9f7ff;
+  .wname {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--ink);
+  }
+  .shapes {
+    display: flex;
+    gap: 2px;
   }
   .pips {
     display: flex;
-    gap: 3px;
+    gap: 4px;
   }
   .pip {
-    width: 5px;
-    height: 5px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.16);
   }
   .pip.on {
+    background: var(--mint);
+  }
+  .pip.gold {
     background: var(--gold);
     box-shadow: 0 0 5px rgba(251, 191, 36, 0.7);
   }
-  .grad {
+  .badge {
     position: absolute;
     top: 4px;
-    right: 6px;
+    right: 8px;
     font-size: 13px;
+  }
+  .lock {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    font-size: 15px;
   }
 
   .how {
