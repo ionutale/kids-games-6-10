@@ -14,6 +14,15 @@ const ICONS = { spike: '❄️', ghost: '👻', copter: '🚁', split: '💠' };
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
+/** `#rrggbb` (or `#rgb`) to an rgba string; falls back to the frost blue. */
+function hexToRgba(hex, alpha = 1) {
+  const raw = String(hex ?? '').replace('#', '');
+  const full = raw.length === 3 ? raw.replace(/./g, (c) => c + c) : raw;
+  if (!/^[0-9a-f]{6}$/i.test(full)) return `rgba(125, 211, 252, ${alpha})`;
+  const n = parseInt(full, 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
 function roundRect(ctx, x, y, w, h, r) {
   const rr = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
@@ -46,7 +55,10 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
   const config = getLevel(level);
   const bumpers = config.bumpers ?? [];
   const accent = config.accent ?? '#7dd3fc';
-  let built = buildCells(config.shape);
+  const auroraTints = [hexToRgba(accent, 0.13), hexToRgba(accent, 0.075), 'rgba(56, 189, 248, 0.06)'];
+  const floorTint = hexToRgba(accent, 0.11);
+  const floorClear = hexToRgba(accent, 0);
+  let built = buildCells(config.shape, { scale: config.scale, coreCount: config.coreCount });
   let cells = built.cells;
   let grid = built.grid;
   let totalCells = built.total;
@@ -91,7 +103,7 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
   // ---------- level setup ----------
 
   function reset() {
-    built = buildCells(config.shape);
+    built = buildCells(config.shape, { scale: config.scale, coreCount: config.coreCount });
     cells = built.cells;
     grid = built.grid;
     totalCells = built.total;
@@ -733,12 +745,7 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
         if (x === -40) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
-      ctx.strokeStyle =
-        i === 0
-          ? 'rgba(45, 212, 191, 0.10)'
-          : i === 1
-            ? 'rgba(129, 140, 248, 0.08)'
-            : 'rgba(56, 189, 248, 0.07)';
+      ctx.strokeStyle = auroraTints[i];
       ctx.lineWidth = 96;
       ctx.lineCap = 'round';
       ctx.stroke();
@@ -746,8 +753,8 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
     ctx.restore();
 
     const floor = ctx.createRadialGradient(360, 1110, 20, 360, 1110, 390);
-    floor.addColorStop(0, 'rgba(56, 189, 248, 0.10)');
-    floor.addColorStop(1, 'rgba(56, 189, 248, 0)');
+    floor.addColorStop(0, floorTint);
+    floor.addColorStop(1, floorClear);
     ctx.fillStyle = floor;
     ctx.beginPath();
     ctx.ellipse(360, 1110, 390, 150, 0, 0, Math.PI * 2);
@@ -1339,7 +1346,7 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
     start() {
       if (running) return;
       running = true;
-      startMusic();
+      startMusic(config.loop);
       last = performance.now();
       raf = requestAnimationFrame(loop);
     },

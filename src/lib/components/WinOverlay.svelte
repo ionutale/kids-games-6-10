@@ -1,7 +1,21 @@
 <script>
   import { t } from '$lib/stores/locale';
 
-  let { result = null, level = 1, bestStars = 0, onRetry, onNext, onBack } = $props();
+  // `maxLevel` stays the fallback: callers that only pass it keep the old behavior.
+  let {
+    result = null,
+    level = 1,
+    bestStars = 0,
+    maxLevel = 50,
+    campaignComplete,
+    hasNext,
+    onRetry,
+    onNext,
+    onBack,
+  } = $props();
+
+  const campaignDone = $derived(campaignComplete ?? level >= maxLevel);
+  const canGoNext = $derived(hasNext ?? level < maxLevel);
 
   const win = $derived(Boolean(result?.win));
   const stars = $derived(Number(result?.stars ?? 0));
@@ -28,7 +42,7 @@
           {stars === 1 ? $t('resultOneStar', { stars, pct }) : $t('resultManyStars', { stars, pct })}
         </p>
         <p class="hint">
-          {#if level >= 10}
+          {#if campaignDone}
             {$t('lastLevel')}
           {:else if stars < 3}
             {$t('howToStars')}
@@ -48,7 +62,7 @@
         <button class="btn primary" type="button" onclick={onRetry}>
           {win ? $t('playAgain') : $t('retry')}
         </button>
-        {#if win && level < 10}
+        {#if win && canGoNext}
           <button class="btn ghost" type="button" onclick={onNext}>{$t('nextLevel')}</button>
         {/if}
         <button class="btn ghost" type="button" onclick={onBack}>{$t('back')}</button>

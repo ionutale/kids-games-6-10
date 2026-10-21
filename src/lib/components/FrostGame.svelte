@@ -2,8 +2,8 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { t } from '$lib/stores/locale';
-  import { advanceLevel, MAX_LEVEL } from '$lib/ladder/progress.js';
-  import { loadStars, recordStars } from '$lib/frost-breaker/progress.js';
+  import { getLevel, getWorld, MAX_FROST_LEVEL } from '$lib/frost-breaker/levels.js';
+  import { loadProgress, nextLevel, recordProgress } from '$lib/frost-breaker/progress.js';
   import { createFrostEngine } from '$lib/frost-breaker/engine.js';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
   import WinOverlay from '$lib/components/WinOverlay.svelte';
@@ -26,8 +26,12 @@
   let reached90 = false;
 
   let result = $state(null);
+  let progress = $state(loadProgress());
   let bestStars = $state(0);
   let toast = $state('');
+
+  const levelNumber = $derived(getLevel(level).level);
+  const world = $derived(getWorld(levelNumber));
 
   let hud = $state({
     level: 0,
@@ -61,9 +65,8 @@
   function handleResult(r) {
     result = r;
     if (r.win) {
-      const stars = recordStars(level, r.stars);
-      bestStars = stars[level - 1] ?? r.stars;
-      advanceLevel('frost-breaker', level);
+      progress = recordProgress(level, r.stars);
+      bestStars = progress.stars[level - 1] ?? r.stars;
     }
   }
 
@@ -84,8 +87,9 @@
   }
 
   function next() {
-    if (level < MAX_LEVEL) goto(`/games/frost-breaker/play/${level + 1}`);
-    else goto('/games/frost-breaker');
+    const target = nextLevel(progress);
+    if (target === level) goto('/games/frost-breaker');
+    else goto(`/games/frost-breaker/play/${target}`);
   }
 
   function back() {
@@ -97,7 +101,8 @@
   }
 
   onMount(() => {
-    bestStars = loadStars()[level - 1] ?? 0;
+    progress = loadProgress();
+    bestStars = progress.stars[level - 1] ?? 0;
     engine = createFrostEngine(canvas, { level, onState: handleState, onResult: handleResult });
     engine.start();
     fit();
@@ -125,7 +130,7 @@
       <header class="topbar">
         <a class="icon-btn" href="/games/frost-breaker" aria-label={$t('back')}>←</a>
         <div class="levelbox">
-          <span class="kicker">{$t('frostName')}</span>
+          <span class="kicker">{$t(world.nameKey)}</span>
           <span class="levelname">{$t('level', { n: level })}</span>
         </div>
         <SoundToggle />
@@ -170,7 +175,17 @@
         {/each}
       </div>
 
-      <WinOverlay {result} {level} {bestStars} onRetry={retry} onNext={next} onBack={back} />
+      <WinOverlay
+        {result}
+        {level}
+        {bestStars}
+        maxLevel={MAX_FROST_LEVEL}
+        campaignComplete={progress.completed.every(Boolean)}
+        hasNext={nextLevel(progress) !== level}
+        onRetry={retry}
+        onNext={next}
+        onBack={back}
+      />
     </div>
   </div>
 </div>

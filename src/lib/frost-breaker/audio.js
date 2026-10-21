@@ -15,17 +15,25 @@ const SOUND_FILES = {
   softfail: '/audio/softfail.mp3',
 };
 
-const MUSIC_FILE = '/audio/frost-loop.mp3';
+const MUSIC_FILES = {
+  garden: '/audio/garden-loop.mp3',
+  frost: '/audio/frost-loop.mp3',
+  royal: '/audio/royal-loop.mp3',
+};
+
+/** Used when a world's loop has not decoded yet (or its file is missing). */
+const MUSIC_FALLBACK = 'frost';
+const MUSIC_FADE = 0.7;
 
 let muted = false;
 let ctx = null;
 let master = null;
 let musicBus = null;
 let musicWanted = false;
+let musicTrack = MUSIC_FALLBACK;
 let musicSource = null;
-let musicGain = null;
 let loadStarted = false;
-let musicBuffer = null;
+const musicBuffers = new Map();
 const samples = new Map();
 
 function ensureGraph() {
@@ -92,21 +100,52 @@ function loadAudio() {
       .catch(() => {});
   }
 
-  fetch(MUSIC_FILE)
-    .then((response) => (response.ok ? response.arrayBuffer() : null))
-    .then((data) => (data ? ctx.decodeAudioData(data) : null))
-    .then((buffer) => {
-      if (!buffer) return;
-      musicBuffer = buffer;
-      maybeStartMusic();
-    })
-    .catch(() => {});
+  for (const [name, url] of Object.entries(MUSIC_FILES)) {
+    fetch(url)
+      .then((response) => (response.ok ? response.arrayBuffer() : null))
+      .then((data) => (data ? ctx.decodeAudioData(data) : null))
+      .then((buffer) => {
+        if (!buffer) return;
+        musicBuffers.set(name, buffer);
+        maybeStartMusic();
+      })
+      .catch(() => {});
+  }
+}
+
+/** Decoded buffer for a track, falling back to the frost loop while others load. */
+function resolveTrack(track) {
+  const direct = musicBuffers.get(track);
+  if (direct) return { key: track, buffer: direct };
+  const fallback = musicBuffers.get(MUSIC_FALLBACK);
+  if (fallback) return { key: MUSIC_FALLBACK, buffer: fallback };
+  return null;
+}
+
+function fadeOutMusic({ source, gain }) {
+  if (!ctx) return;
+  try {
+    gain.gain.cancelScheduledValues(ctx.currentTime);
+    gain.gain.setTargetAtTime(0, ctx.currentTime, 0.2);
+    source.stop(ctx.currentTime + MUSIC_FADE);
+  } catch {
+    // already stopped
+  }
 }
 
 function maybeStartMusic() {
-  if (!musicWanted || !ctx || ctx.state !== 'running' || !musicBuffer || musicSource) return;
+  if (!musicWanted || !ctx || ctx.state !== 'running') return;
+  const track = resolveTrack(musicTrack);
+  if (!track) return;
+  if (musicSource && musicSource.key === track.key) return;
+
+  if (musicSource) {
+    fadeOutMusic(musicSource);
+    musicSource = null;
+  }
+
   const source = ctx.createBufferSource();
-  source.buffer = musicBuffer;
+  source.buffer = track.buffer;
   source.loop = true;
   const gain = ctx.createGain();
   gain.gain.value = 0;
@@ -114,10 +153,11 @@ function maybeStartMusic() {
   gain.connect(musicBus);
   source.start();
   gain.gain.setTargetAtTime(1, ctx.currentTime, 0.9);
-  musicSource = { source, gain };
+  musicSource = { key: track.key, source, gain };
 }
 
-export function startMusic() {
+export function startMusic(track = MUSIC_FALLBACK) {
+  musicTrack = MUSIC_FILES[track] ? track : MUSIC_FALLBACK;
   musicWanted = true;
   unlockAudio();
   maybeStartMusic();
@@ -126,14 +166,9 @@ export function startMusic() {
 export function stopMusic() {
   musicWanted = false;
   if (!musicSource || !ctx) return;
-  const { source, gain } = musicSource;
+  const current = musicSource;
   musicSource = null;
-  gain.gain.setTargetAtTime(0, ctx.currentTime, 0.2);
-  try {
-    source.stop(ctx.currentTime + 0.7);
-  } catch {
-    // already stopped
-  }
+  fadeOutMusic(current);
 }
 
 function playSample(name, volume = 0.6, rate = 1) {
@@ -254,10 +289,16 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
       return [...samples.keys()];
     },
     get musicBuffer() {
-      return Boolean(musicBuffer);
+      return musicBuffers.has(musicTrack);
+    },
+    get musicTracks() {
+      return [...musicBuffers.keys()];
+    },
+    get musicTrack() {
+      return musicTrack;
     },
     get musicPlaying() {
-      return Boolean(musicSource);
+      return musicSource ? musicSource.key : null;
     },
     get muted() {
       return muted;
