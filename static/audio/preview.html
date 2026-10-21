@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Frost Breaker — audio preview</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #eaf8ff;
+        --muted: #8db8cc;
+        --cyan: #7dd3fc;
+        --mint: #5eead4;
+        --gold: #fbbf24;
+        --line: rgba(157, 228, 255, 0.22);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 40px 20px 70px;
+        color: var(--ink);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        background:
+          radial-gradient(ellipse at 15% 0%, rgba(45, 212, 191, 0.18), transparent 45%),
+          radial-gradient(ellipse at 85% 5%, rgba(129, 140, 248, 0.16), transparent 42%),
+          linear-gradient(180deg, #04101f, #061a2c 55%, #020a13);
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: clamp(30px, 5vw, 48px);
+        letter-spacing: -1px;
+        margin: 0 0 8px;
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 30px;
+        line-height: 1.5;
+      }
+      .badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--cyan);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+      }
+      .card {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: rgba(7, 26, 43, 0.78);
+        backdrop-filter: blur(10px);
+      }
+      .card.music {
+        grid-column: 1 / -1;
+        border-color: rgba(251, 191, 36, 0.45);
+      }
+      h2 {
+        font-size: 18px;
+        margin: 0 0 4px;
+      }
+      .use {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+        margin: 0 0 12px;
+      }
+      audio {
+        width: 100%;
+      }
+      .file {
+        color: #6f9aab;
+        font-size: 11px;
+        margin-top: 8px;
+        font-family: ui-monospace, Menlo, monospace;
+      }
+      .note {
+        color: #6f9aab;
+        font-size: 13px;
+        line-height: 1.5;
+        margin-top: 28px;
+      }
+      a {
+        color: var(--mint);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="badge">Studio-generated · internal preview</span>
+      <h1>Frost Breaker — audio</h1>
+      <p class="sub">
+        Generated locally with the Studio app (Stable Audio 3). This page is a listening tool, not part of the
+        game. The game uses the same MP3s and falls back to procedural WebAudio if one is missing.
+      </p>
+
+      <div class="grid">
+        <article class="card">
+          <h2>Tap</h2>
+          <p class="use">Pod selection / UI tick</p>
+          <audio controls preload="metadata" src="tap.mp3"></audio>
+          <div class="file">tap.mp3 · 0.12 s</div>
+        </article>
+        <article class="card">
+          <h2>Launch</h2>
+          <p class="use">Slingshot release</p>
+          <audio controls preload="metadata" src="launch.mp3"></audio>
+          <div class="file">launch.mp3 · 0.51 s</div>
+        </article>
+        <article class="card">
+          <h2>Stick</h2>
+          <p class="use">Spike attaches to the ice</p>
+          <audio controls preload="metadata" src="stick.mp3"></audio>
+          <div class="file">stick.mp3 · 0.19 s</div>
+        </article>
+        <article class="card">
+          <h2>Crack</h2>
+          <p class="use">Ice shatter</p>
+          <audio controls preload="metadata" src="crack.mp3"></audio>
+          <div class="file">crack.mp3 · 0.65 s</div>
+        </article>
+        <article class="card">
+          <h2>Crystal</h2>
+          <p class="use">Copter crystal pop</p>
+          <audio controls preload="metadata" src="crystal.mp3"></audio>
+          <div class="file">crystal.mp3 · 0.47 s</div>
+        </article>
+        <article class="card">
+          <h2>Split</h2>
+          <p class="use">Split pod breaks into three</p>
+          <audio controls preload="metadata" src="split.mp3"></audio>
+          <div class="file">split.mp3 · 0.34 s</div>
+        </article>
+        <article class="card">
+          <h2>Core</h2>
+          <p class="use">Crystal-core chain blast</p>
+          <audio controls preload="metadata" src="core.mp3"></audio>
+          <div class="file">core.mp3 · 1.70 s</div>
+        </article>
+        <article class="card">
+          <h2>Win</h2>
+          <p class="use">Level result fanfare</p>
+          <audio controls preload="metadata" src="win.mp3"></audio>
+          <div class="file">win.mp3 · 1.93 s</div>
+        </article>
+        <article class="card">
+          <h2>Soft fail</h2>
+          <p class="use">“So close!” result</p>
+          <audio controls preload="metadata" src="softfail.mp3"></audio>
+          <div class="file">softfail.mp3 · 0.86 s</div>
+        </article>
+        <article class="card music">
+          <h2>Frost loop</h2>
+          <p class="use">
+            Background music · 18.2 s seamless loop · starts after the first gesture in the game
+          </p>
+          <audio controls loop preload="metadata" src="frost-loop.mp3"></audio>
+          <div class="file">frost-loop.mp3 · 18.2 s · stereo</div>
+        </article>
+      </div>
+
+      <p class="note">
+        Provenance and prompts live in <code>docs/audio.md</code> in the repo. The preview page is excluded
+        from the SPA rewrite and is safe to remove before launch.
+      </p>
+    </main>
+  </body>
+</html>

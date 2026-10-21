@@ -1,45 +1,91 @@
 # Kids Games 5–8
 
-The older-sibling hub for ages 6–10. First game: **Frost Breaker**.
+Big-kid games for ages 6–10. First game: **Frost Breaker**.
 
-## Status: prototype
+Aim ice poppers at a frozen sculpture, chain the glowing crystal cores, and clear 90% before the pods run out. Ten hand-built silhouettes, four pod behaviours, 90/95/100 star thresholds, a gentle “so close” retry, and no lost progress.
 
-This repository currently contains a **throwaway playable prototype**, not production code.
+## Status
 
-Open:
+Playable production vertical slice: hub + Frost Breaker + 10 levels, six locales, PWA offline, generated audio.
 
-```sh
-open prototype/frost-breaker.html
+The throwaway one-sculpture feel test is preserved on the `prototype/frost-breaker` branch and in `prototype/frost-breaker.html`.
+
+## Quick start
+
+```bash
+pnpm install
+pnpm dev
 ```
 
-No build step, no dependencies, no persistence. The prototype answers one question: **is the launch-and-shatter loop fun for 6–10 year olds?**
+| Command        | Description                            |
+| -------------- | -------------------------------------- |
+| `pnpm dev`     | Vite dev server                        |
+| `pnpm check`   | SvelteKit sync + svelte-check          |
+| `pnpm test`    | Vitest rules, grid, star, locale tests |
+| `pnpm build`   | Static PWA build into `build/`         |
+| `pnpm preview` | Preview the production build           |
+| `pnpm lint`    | Prettier check                         |
+| `pnpm format`  | Prettier write                         |
 
-## What to try
+Requires Node 20+ and pnpm. Deploy the `build/` directory to Vercel; `vercel.json` adds the SPA fallback.
 
-- Pick a pod from the bottom tray.
-- Drag down/back from the slingshot, then release.
-- Aim for the glowing crystal cores — they chain through the ice.
-- Clear 90% to finish; 95% is two stars; 100% is a perfect shatter.
-- Below 90% with no pods left = gentle retry card, no punishment.
-- `D` toggles the debug readout. `R` resets the sculpture.
+## What is in the box
 
-## Locked design decisions (from the grill)
+- **Hub** (`/`) — frosted-aurora game launcher, current-level mini ladder, sound/language settings.
+- **Frost Breaker landing** (`/games/frost-breaker`) — free-pick 10-level grid with best stars, “how to play” cards.
+- **Game** (`/games/frost-breaker/play/[1–10]`) — 720×1280 playfield, drag-back slingshot, dotted aim line, live 90% HUD, pod tray, soft-fail and star result overlays.
+- **Rules** (`src/lib/frost-breaker/rules.js`) — 90% clears, 95% is two stars, 100% is three; no 100% display until every cell is gone.
+- **Sculptures** (`src/lib/frost-breaker/shapes.js`) — star, fish, cat, rocket, castle, snowman, dinosaur, butterfly, lighthouse, crown. Cell-filled at 26 px; 1–3 crystal cores per sculpture.
+- **Engine** (`src/lib/frost-breaker/engine.js`) — deterministic cell fracture, connected-mass collapse, spike/ghost/copter/split behaviours, particles and screen shake.
+- **Audio** (`src/lib/frost-breaker/audio.js`, `static/audio/`) — Studio-generated SFX and an 18.2 s seamless music loop, with a procedural WebAudio fallback. See [docs/audio.md](docs/audio.md).
+- **Locales** — en, it, ro, de, fr, zh; every key is parity-tested.
+- **PWA** — static adapter, service worker precache, manifest, offline deep links.
+
+## Layout
+
+```
+src/
+  app.css                     design tokens + frosted-aurora shell
+  lib/
+    components/               SoundToggle, GameShell, FrostGame, WinOverlay
+    frost-breaker/            audio, engine, grid, levels, rules, shapes, progress
+    i18n/messages.js          six-locale catalogs
+    ladder/progress.js        shared 10-level ladder contract
+    stores/                   locale + settings
+  routes/
+    +page.svelte              hub
+    games/frost-breaker/      landing + play/[level]
+static/audio/                 generated SFX + music loop
+static/icons/                 app icon
+tests/unit/                   rules, grid, stars, locale parity
+docs/audio.md                 sound provenance + prompts
+prototype/frost-breaker.html  throwaway feel test
+```
+
+## Locked design decisions
 
 - Faithful Amazing Breaker adaptation: four pods, 90% clear, 1–3 stars, soft fail + retry.
-- Friendly ice poppers: no fire, smoke, or war imagery.
-- All four pods available from the start, with limited counts.
+- Friendly ice poppers; no fire, smoke, or war imagery.
+- All four pods available from level 1, limited counts per level.
 - Drag-back slingshot, dotted aim line, straight flight.
-- Pods: Spike, Ghost (swipe-steer), Copter (drop trail), Split (three).
-- 1–3 crystal cores per sculpture.
-- 10 recognizable silhouettes on the shared 10-level ladder.
+- Spike · Ghost (swipe-steer) · Copter (drop trail) · Split (three).
+- 1–3 crystal cores per sculpture; hitting one chain-shatters a radius.
+- Ten recognizable silhouettes on the shared 10-level ladder.
 - Frosted-aurora art direction; hand-rolled AABB + destructible cell grid.
-- Locales at launch: en / it / ro / de / fr / zh.
-- Fresh SvelteKit app with deliberate ports from the 2–5 hub (PWA, audio, ladder, shell, tests).
+- Fresh SvelteKit app with deliberate ports from the 2–5 hub (PWA, ladder, shell, audio patterns).
 
-## Prototype success bar
+## Open question
 
-A 6-year-old clears the Star with 4–6 pods, uses at least two pod types, understands the 90% card, and asks to play again. Plus 60fps on an iPad and deterministic physics tests.
+The repository and display name say **5–8**, while the chosen audience is **6–10**. Pick one before launch:
 
-## Next step
+1. keep the repo name and change the display/brand to **Big Kids** (no age in the name), or
+2. keep the display name and change it to **Kids Games 6–10**, or
+3. keep both and accept the mismatch.
 
-If the prototype feels right, scaffold the SvelteKit app and build the 10-level game.
+## Next
+
+- Owner playtest with a 6–10 year old; tune pod counts and core placement from notes.
+- Final ice-sculpture art pass (the current silhouettes are deliberately blocky cell mosaics).
+- More Studio sound variants and a second music loop.
+- End-to-end Playwright coverage for hub → landing → game → result → next level.
+- Decide the display-name question above, then deploy.
