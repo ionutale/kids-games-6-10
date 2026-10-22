@@ -193,6 +193,7 @@
         maxLevel={MAX_FROST_LEVEL}
         campaignComplete={isCampaignMastered(progress)}
         hasNext={nextTarget !== null}
+        {nextTarget}
         onRetry={retry}
         onNext={next}
         onBack={back}

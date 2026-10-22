@@ -9,6 +9,7 @@
     maxLevel = 50,
     campaignComplete,
     hasNext,
+    nextTarget = null,
     onRetry,
     onNext,
     onBack,
@@ -18,6 +19,7 @@
   const canGoNext = $derived(hasNext ?? level < maxLevel);
 
   const win = $derived(Boolean(result?.win));
+  const showNext = $derived(win && canGoNext && nextTarget !== null);
   const stars = $derived(Number(result?.stars ?? 0));
   const pct = $derived(Number(result?.pct ?? 0));
   const title = $derived(
@@ -59,11 +61,19 @@
       {/if}
 
       <div class="actions">
-        <button class="btn primary" type="button" onclick={onRetry}>
-          {win ? $t('playAgain') : $t('retry')}
-        </button>
-        {#if win && canGoNext}
-          <button class="btn ghost" type="button" onclick={onNext}>{$t('nextLevel')}</button>
+        {#if showNext}
+          <button class="btn primary" type="button" onclick={onNext}>
+            {$t('playLevel', { n: nextTarget })}
+          </button>
+          <button class="btn ghost" type="button" onclick={onRetry}>
+            {$t('playAgain')} · {$t('level', { n: level })}
+          </button>
+        {:else if win}
+          <button class="btn primary" type="button" onclick={onRetry}>
+            {$t('playAgain')} · {$t('level', { n: level })}
+          </button>
+        {:else}
+          <button class="btn primary" type="button" onclick={onRetry}>{$t('retry')}</button>
         {/if}
         <button class="btn ghost" type="button" onclick={onBack}>{$t('back')}</button>
       </div>
