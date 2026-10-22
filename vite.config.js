@@ -28,7 +28,19 @@ export default defineConfig({
           '**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,gif,mp3,wav,ogg,woff,woff2,webmanifest,json,txt}',
         ],
         globIgnores: ['**/.DS_Store', 'server/**', '**/*.map', '**/audio/preview.html'],
-        navigateFallback: '/',
+        navigateFallback: null,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/kids-games-6-10\.aiu-media\.com\/(?:$|games\/|settings)/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'frost-pages',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 20 },
+              precacheFallback: { fallbackURL: '/' },
+            },
+          },
+        ],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
     }),
