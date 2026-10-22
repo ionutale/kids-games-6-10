@@ -2,7 +2,7 @@
   import SoundToggle from '$lib/components/SoundToggle.svelte';
   import { t } from '$lib/stores/locale';
 
-  let { backHref = '/', title = '', children } = $props();
+  let { backHref = '/', title = '', settingsLink = true, soundToggle = true, children } = $props();
 </script>
 
 <div class="shell">
@@ -12,7 +12,12 @@
       <span class="kicker">{$t('appTitle')}</span>
       <h1>{title}</h1>
     </div>
-    <SoundToggle />
+    {#if settingsLink}
+      <a class="icon-btn" href="/settings" aria-label={$t('settings')}>⚙️</a>
+    {/if}
+    {#if soundToggle}
+      <SoundToggle />
+    {/if}
   </header>
 
   <main class="content">

@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { t, locale, setLocale, LOCALES } from '$lib/stores/locale';
+  import { t } from '$lib/stores/locale';
   import { WORLDS, getWorld } from '$lib/frost-breaker/levels.js';
   import {
     emptyProgress,
@@ -10,9 +10,7 @@
     loadProgress,
     nextLevel,
   } from '$lib/frost-breaker/progress.js';
-  import SoundToggle from '$lib/components/SoundToggle.svelte';
 
-  let showSettings = $state(false);
   let progress = $state(emptyProgress());
   const currentWorldId = $derived(getWorld(nextLevel(progress)).id);
   const mastered = $derived(isCampaignMastered(progress));
@@ -59,46 +57,7 @@
     </div>
   </main>
 
-  <button
-    class="settings-trigger icon-btn"
-    type="button"
-    aria-label={$t('settings')}
-    onclick={() => (showSettings = true)}
-  >
-    ⚙️
-  </button>
-
-  {#if showSettings}
-    <div class="settings-backdrop" role="presentation" onclick={() => (showSettings = false)}></div>
-    <div class="settings-panel glass" role="dialog" aria-modal="true" aria-label={$t('settings')}>
-      <h2>{$t('settings')}</h2>
-
-      <div class="setting-row">
-        <span>{$t('sound')}</span>
-        <SoundToggle />
-      </div>
-
-      <div class="setting-col">
-        <span>{$t('language')}</span>
-        <div class="langs">
-          {#each LOCALES as l}
-            <button
-              class="lang"
-              class:active={$locale === l.id}
-              type="button"
-              onclick={() => setLocale(l.id)}
-            >
-              {l.label}
-            </button>
-          {/each}
-        </div>
-      </div>
-
-      <button class="btn primary" type="button" onclick={() => (showSettings = false)}>
-        {$t('done')}
-      </button>
-    </div>
-  {/if}
+  <a class="settings-trigger icon-btn" href="/settings" aria-label={$t('settings')}>⚙️</a>
 </div>
 
 <style>
@@ -258,67 +217,5 @@
     right: calc(18px + var(--safe-right));
     bottom: calc(20px + var(--safe-bottom));
     z-index: 30;
-  }
-  .settings-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    background: rgba(1, 7, 14, 0.6);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-  .settings-panel {
-    position: fixed;
-    z-index: 41;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: min(520px, calc(100vw - 32px));
-    padding: 24px;
-    border-radius: 26px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-  .settings-panel h2 {
-    font-size: 24px;
-    letter-spacing: -0.4px;
-  }
-  .setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    font-size: 15px;
-    font-weight: 650;
-    color: var(--ink-soft);
-  }
-  .setting-col {
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-    font-size: 15px;
-    font-weight: 650;
-    color: var(--ink-soft);
-  }
-  .langs {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-  .lang {
-    min-height: 44px;
-    border-radius: 12px;
-    border: 1px solid var(--line);
-    background: rgba(6, 24, 40, 0.7);
-    color: var(--ink-soft);
-    font-size: 14px;
-    font-weight: 750;
-  }
-  .lang.active {
-    border-color: var(--cyan);
-    color: #04202e;
-    background: linear-gradient(180deg, #a8eeff, #5eead4);
-    box-shadow: 0 0 18px rgba(125, 211, 252, 0.28);
   }
 </style>

@@ -31,7 +31,8 @@ Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `
 
 ## What is in the box
 
-- **Hub** (`/`) — frosted-aurora game launcher, campaign progress, sound/language settings.
+- **Hub** (`/`) — frosted-aurora game launcher, campaign progress, and a link to settings.
+- **Settings** (`/settings`) — persisted music and sound-effects volume, mute, and a six-language picker.
 - **World map** (`/games/frost-breaker`) — ten world cards with best stars and “how to play” cards. Worlds open in order; each open world shows its five levels.
 - **World page** (`/games/frost-breaker/world/[1–10]`) — five level nodes, free to pick in any order inside an open world.
 - **Game** (`/games/frost-breaker/play/[1–50]`) — 720×1280 playfield, drag-back slingshot, dotted bank-shot aim preview, live 90% HUD, pod tray, soft-fail and star result overlays.

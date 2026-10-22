@@ -2,6 +2,8 @@
 // (Stable Audio 3) with procedural WebAudio as the offline/first-load fallback.
 // No third-party sample packs, no network at runtime beyond the app's own files.
 
+import { clampVolume, loadVolumes, saveVolumes } from './volume.js';
+
 const SOUND_FILES = {
   tap: '/audio/tap.mp3',
   launch: '/audio/launch.mp3',
@@ -24,11 +26,18 @@ const MUSIC_FILES = {
 /** Used when a world's loop has not decoded yet (or its file is missing). */
 const MUSIC_FALLBACK = 'frost';
 const MUSIC_FADE = 0.7;
+/** Music sits below SFX by design; the old fixed bus was 0.22. */
+const MUSIC_BUS_SCALE = 0.34;
+
+const storedVolumes = loadVolumes();
+let musicVolume = storedVolumes.music;
+let sfxVolume = storedVolumes.sfx;
 
 let muted = false;
 let ctx = null;
 let master = null;
 let musicBus = null;
+let sfxBus = null;
 let musicWanted = false;
 let musicTrack = MUSIC_FALLBACK;
 let musicSource = null;
@@ -53,8 +62,11 @@ function ensureGraph() {
     master.connect(limiter);
     limiter.connect(ctx.destination);
     musicBus = ctx.createGain();
-    musicBus.gain.value = 0.22;
+    musicBus.gain.value = musicVolume * MUSIC_BUS_SCALE;
     musicBus.connect(master);
+    sfxBus = ctx.createGain();
+    sfxBus.gain.value = sfxVolume;
+    sfxBus.connect(master);
   }
   return ctx;
 }
@@ -69,6 +81,34 @@ export function setMuted(value) {
 
 export function isMuted() {
   return muted;
+}
+
+export function getMusicVolume() {
+  return musicVolume;
+}
+
+export function getSfxVolume() {
+  return sfxVolume;
+}
+
+/** Clamp, persist, then glide the bus. Safe before the AudioContext exists. */
+export function setMusicVolume(value) {
+  musicVolume = clampVolume(value, musicVolume);
+  saveVolumes({ music: musicVolume, sfx: sfxVolume });
+  if (musicBus && ctx) {
+    musicBus.gain.setTargetAtTime(musicVolume * MUSIC_BUS_SCALE, ctx.currentTime, 0.05);
+  }
+  return musicVolume;
+}
+
+/** Clamp, persist, then glide the bus. Safe before the AudioContext exists. */
+export function setSfxVolume(value) {
+  sfxVolume = clampVolume(value, sfxVolume);
+  saveVolumes({ music: musicVolume, sfx: sfxVolume });
+  if (sfxBus && ctx) {
+    sfxBus.gain.setTargetAtTime(sfxVolume, ctx.currentTime, 0.05);
+  }
+  return sfxVolume;
 }
 
 export function unlockAudio() {
@@ -181,7 +221,7 @@ function playSample(name, volume = 0.6, rate = 1) {
   const gain = ctx.createGain();
   gain.gain.value = volume;
   source.connect(gain);
-  gain.connect(master);
+  gain.connect(sfxBus || master);
   source.start();
   return true;
 }
@@ -201,7 +241,7 @@ function toneAt(freq, dur, type = 'sine', vol = 0.04, delay = 0, slide = 0) {
   gain.gain.setValueAtTime(Math.max(0.0001, vol), t);
   gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   osc.connect(gain);
-  gain.connect(master);
+  gain.connect(sfxBus || master);
   osc.start(t);
   osc.stop(t + dur + 0.03);
 }
@@ -226,7 +266,7 @@ function noiseAt(dur = 0.14, vol = 0.035, freq = 1200, delay = 0) {
   gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   src.connect(filter);
   filter.connect(gain);
-  gain.connect(master);
+  gain.connect(sfxBus || master);
   src.start(t);
   src.stop(t + dur);
 }
@@ -302,6 +342,18 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     },
     get muted() {
       return muted;
+    },
+    get musicVolume() {
+      return musicVolume;
+    },
+    get sfxVolume() {
+      return sfxVolume;
+    },
+    get musicBusGain() {
+      return musicBus?.gain.value ?? null;
+    },
+    get sfxBusGain() {
+      return sfxBus?.gain.value ?? null;
     },
   };
 }
