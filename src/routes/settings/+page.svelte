@@ -10,6 +10,8 @@
     setSfxVolume,
     sfx,
     unlockAudio,
+    startMusic,
+    stopMusic,
   } from '$lib/frost-breaker/audio.js';
 
   let musicPct = $state(0);
@@ -19,11 +21,15 @@
   onMount(() => {
     musicPct = Math.round(getMusicVolume() * 100);
     sfxPct = Math.round(getSfxVolume() * 100);
+    return () => {
+      stopMusic();
+    };
   });
 
   function onMusicInput(event) {
     musicPct = event.currentTarget.valueAsNumber;
     setMusicVolume(musicPct / 100);
+    startMusic('garden');
   }
 
   function onSfxInput(event) {
