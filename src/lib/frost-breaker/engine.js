@@ -11,6 +11,9 @@ const MAX_PULL = 240;
 const MIN_PULL = 38;
 const ICONS = { spike: '❄️', ghost: '👻', copter: '🚁', split: '💠' };
 const EMOJI_FONT = '30px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+const SPLIT_FUSE = 0.12;
+const SPLIT_SPEED_BASE = 500;
+const SPLIT_SPEED_POWER = 260;
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -339,6 +342,7 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
       r: type === 'ghost' ? 12 : child ? 8 : 10,
       power,
       life: type === 'ghost' ? 0.95 : type === 'copter' ? 1.15 : 2.2,
+      splitFuse: type === 'split' ? SPLIT_FUSE : 0,
       dropTimer: 0.06,
       dropsLeft: 6,
       trail: [],
@@ -352,7 +356,7 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
 
   function speedFor(type, power) {
     if (type === 'ghost') return 620;
-    if (type === 'split') return 760 + 420 * power;
+    if (type === 'split') return SPLIT_SPEED_BASE + SPLIT_SPEED_POWER * power;
     return 1120 + 760 * power;
   }
 
@@ -391,6 +395,16 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
           p.dead = true;
         }
         continue;
+      }
+
+      if (p.type === 'split') {
+        p.splitFuse -= dt;
+        if (p.splitFuse <= 0) {
+          p.splitDone = true;
+          splitProjectile(p);
+          p.dead = true;
+          continue;
+        }
       }
 
       if (p.type === 'ghost') {
