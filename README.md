@@ -36,6 +36,7 @@ Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `
 - **World map** (`/games/frost-breaker`) — ten world cards with best stars and “how to play” cards. Worlds open in order; each open world shows its five levels.
 - **World page** (`/games/frost-breaker/world/[1–10]`) — five level nodes, free to pick in any order inside an open world.
 - **Game** (`/games/frost-breaker/play/[1–50]`) — 720×1280 playfield, drag-back slingshot, dotted bank-shot aim preview, live 90% HUD, pod tray, soft-fail and star result overlays.
+- **Pod guide** (`/games/frost-breaker/guide`) — four illustrated projectile cards explaining Spike, Ghost, Copter, and Split, with best-use tips and a current-level play link.
 - **Campaign** (`src/lib/frost-breaker/levels.js`) — 10 worlds × 5 levels. 20 unique silhouettes, with the other 30 levels remixing them through scale, core count and bumpers. Pod totals climb 5→14; crystal cores run 1→3.
 - **Rules** (`src/lib/frost-breaker/rules.js`) — 90% clears, 95% is two stars, 100% is three; no 100% display until every cell is gone.
 - **Progress** (`src/lib/frost-breaker/progress.js`) — fresh `frostBreaker2` save key; older star data is deliberately ignored. Completing all five levels of a world at 90% or better opens the next world.

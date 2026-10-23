@@ -102,6 +102,7 @@
         <span class="howicon" aria-hidden="true">💎</span>
         <h3>{$t('spike')} · {$t('ghost')} · {$t('copter')} · {$t('split')}</h3>
         <p>{$t('howToCore')}</p>
+        <a class="howlink" href="/games/frost-breaker/guide">{$t('podGuide')} →</a>
       </article>
       <article class="howcard glass">
         <span class="howicon" aria-hidden="true">⭐</span>
@@ -332,5 +333,23 @@
   }
   .howcard .wallhint {
     color: var(--mint);
+  }
+  .howlink {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    min-height: 44px;
+    margin-top: auto;
+    padding: 12px 0;
+    color: var(--mint);
+    font-size: 13.5px;
+    font-weight: 750;
+    transition: color 0.15s ease;
+  }
+  .howlink:hover {
+    color: var(--cyan);
+  }
+  .howlink:active {
+    transform: scale(0.97);
   }
 </style>
