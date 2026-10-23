@@ -10,6 +10,7 @@ const SLING = { x: 360, y: 1008, spawnY: 960 };
 const MAX_PULL = 240;
 const MIN_PULL = 38;
 const ICONS = { spike: '❄️', ghost: '👻', copter: '🚁', split: '💠' };
+const EMOJI_FONT = '30px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -939,6 +940,38 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
     ctx.restore();
   }
 
+  function drawCenteredEmoji(icon, x, y) {
+    ctx.save();
+    ctx.font = EMOJI_FONT;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    const metrics = ctx.measureText(icon);
+    const left = metrics.actualBoundingBoxLeft;
+    const right = metrics.actualBoundingBoxRight;
+    const ascent = metrics.actualBoundingBoxAscent;
+    const descent = metrics.actualBoundingBoxDescent;
+    const inkWidth = left + right;
+    const inkHeight = ascent + descent;
+    if (
+      Number.isFinite(left) &&
+      Number.isFinite(right) &&
+      Number.isFinite(ascent) &&
+      Number.isFinite(descent) &&
+      inkWidth > 0 &&
+      inkHeight > 0
+    ) {
+      // With left/alphabetic alignment: ink center = x + (right-left)/2;
+      // ink center = y + (descent-ascent)/2.
+      ctx.fillText(icon, x - (right - left) / 2, y + (ascent - descent) / 2);
+    } else {
+      // Older engines without actualBoundingBox metrics.
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(icon, x, y);
+    }
+    ctx.restore();
+  }
+
   function drawSlingshot() {
     const pull = drag.active && phase === 'aiming' ? getPull() : { px: 0, py: -62 };
     const pouchX = clamp(SLING.x + pull.px, 58, W - 58);
@@ -1004,10 +1037,7 @@ export function createFrostEngine(canvas, { level, onState, onResult }) {
     ctx.strokeStyle = 'rgba(157, 228, 255, 0.45)';
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.font = '30px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(ICONS[selectedPod] || ICONS.spike, pouchX, pouchY + 1);
+    drawCenteredEmoji(ICONS[selectedPod] || ICONS.spike, pouchX, pouchY);
     ctx.restore();
   }
 
