@@ -10,13 +10,17 @@
     loadProgress,
     nextLevel,
   } from '$lib/frost-breaker/progress.js';
+  import { AURORA_LEVELS } from '$lib/aurora/levels.js';
+  import { emptyAuroraProgress, loadAuroraProgress } from '$lib/aurora/progress.js';
 
   let progress = $state(emptyProgress());
+  let auroraProgress = $state(emptyAuroraProgress());
   const currentWorldId = $derived(getWorld(nextLevel(progress)).id);
   const mastered = $derived(isCampaignMastered(progress));
 
   onMount(() => {
     progress = loadProgress();
+    auroraProgress = loadAuroraProgress();
   });
 </script>
 
@@ -51,11 +55,19 @@
       </span>
     </a>
 
-    <div class="tile soon">
-      <span class="tileicon" aria-hidden="true">✨</span>
-      <span class="tilename">{$t('comingSoon')}</span>
-    </div>
+    <a class="tile aurora" href="/games/aurora-mirrors">
+      <span class="tileicon" aria-hidden="true">🪞</span>
+      <span class="tilename">{$t('auroraName')}</span>
+      <span class="tiledesc">{$t('auroraDesc')}</span>
+      <span class="mini" aria-hidden="true">
+        {#each AURORA_LEVELS as level (level.id)}
+          <span class="dot" class:done={auroraProgress.stars[level.id - 1] > 0}></span>
+        {/each}
+      </span>
+    </a>
   </main>
+
+  <p class="more">{$t('comingSoon')}</p>
 
   <a class="settings-trigger icon-btn" href="/settings" aria-label={$t('settings')}>⚙️</a>
 </div>
@@ -144,6 +156,13 @@
       0 26px 60px rgba(0, 0, 0, 0.4),
       0 0 32px rgba(125, 211, 252, 0.12);
   }
+  .tile.aurora:hover {
+    transform: translateY(-4px);
+    border-color: rgba(94, 234, 212, 0.5);
+    box-shadow:
+      0 26px 60px rgba(0, 0, 0, 0.4),
+      0 0 32px rgba(94, 234, 212, 0.12);
+  }
   .tile:active {
     transform: scale(0.985);
   }
@@ -195,21 +214,14 @@
   .dot.mastered {
     background: var(--gold);
   }
-  .soon {
-    border-style: dashed;
-    opacity: 0.68;
-    justify-content: center;
-    gap: 12px;
-  }
-  .soon .tileicon {
-    font-size: 46px;
-    filter: none;
-  }
-  .soon .tilename {
-    font-size: 16px;
+  .more {
+    max-width: 760px;
+    margin: -8px auto 0;
+    color: var(--muted);
+    font-size: 11px;
     font-weight: 650;
-    color: var(--ink-soft);
-    max-width: 240px;
+    letter-spacing: 0.4px;
+    text-align: center;
   }
 
   .settings-trigger {
