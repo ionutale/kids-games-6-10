@@ -13,9 +13,126 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Kids 6–10" />
     <link rel="apple-touch-icon" href="%sveltekit.assets%/icons/icon.svg" />
+    <style>
+      #boot-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: radial-gradient(ellipse at 50% 18%, #123350 0%, #071a2b 55%, #04101f 100%);
+        color: #e9f7ff;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+      }
+      #boot-screen[hidden] {
+        display: none;
+      }
+      .boot-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        max-width: 260px;
+        text-align: center;
+      }
+      .boot-icon {
+        font-size: 46px;
+        line-height: 1;
+        filter: drop-shadow(0 0 18px rgba(125, 211, 252, 0.6));
+      }
+      .boot-spinner {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 3px solid rgba(125, 211, 252, 0.2);
+        border-top-color: #7dd3fc;
+        animation: boot-spin 1s linear infinite;
+      }
+      #boot-screen.failed .boot-spinner {
+        display: none;
+      }
+      #boot-note {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      #boot-repair {
+        min-height: 44px;
+        padding: 10px 18px;
+        border: 1px solid rgba(125, 211, 252, 0.6);
+        border-radius: 999px;
+        background: #7dd3fc;
+        color: #04101f;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 750;
+        cursor: pointer;
+      }
+      #boot-repair[hidden] {
+        display: none;
+      }
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-spinner {
+          animation: none;
+        }
+      }
+    </style>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
+    <div id="boot-screen" role="status" aria-live="polite">
+      <div class="boot-card">
+        <span class="boot-icon" aria-hidden="true">❄️</span>
+        <span class="boot-spinner" aria-hidden="true"></span>
+        <p id="boot-note">Loading…</p>
+        <button id="boot-repair" type="button" hidden>Repair &amp; reload</button>
+      </div>
+    </div>
     <div style="display: contents">%sveltekit.body%</div>
+    <script>
+      (() => {
+        const screen = document.getElementById('boot-screen');
+        const note = document.getElementById('boot-note');
+        const repair = document.getElementById('boot-repair');
+        const timer = window.setTimeout(() => {
+          screen.classList.add('failed');
+          note.textContent = 'Still loading? Repair the app.';
+          repair.hidden = false;
+        }, 8000);
+
+        window.__frostBooted = () => {
+          window.clearTimeout(timer);
+          if (screen) screen.hidden = true;
+        };
+
+        repair.addEventListener('click', async () => {
+          repair.disabled = true;
+          repair.textContent = 'Repairing…';
+          try {
+            if ('serviceWorker' in navigator) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(registrations.map((registration) => registration.unregister()));
+            }
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((key) => caches.delete(key)));
+            }
+          } catch {
+            // Reload even if the browser blocks cleanup.
+          }
+          location.reload();
+        });
+      })();
+    </script>
   </body>
 </html>

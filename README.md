@@ -43,7 +43,7 @@ Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `
 - **Engine** (`src/lib/frost-breaker/engine.js`, `walls.js`) — deterministic cell fracture, connected-mass collapse, spike/ghost/copter/split behaviours, outer side rails and ceiling with an open bottom, 0–2 interior bumpers per level, bank-shot aim preview, and a short-fuse split pod that fans into three. Particles and screen shake.
 - **Audio** (`src/lib/frost-breaker/audio.js`, `static/audio/`) — Studio-generated SFX and three seamless Studio music loops: garden, frost, royal, with a procedural WebAudio fallback. See [docs/audio.md](docs/audio.md).
 - **Locales** — en, it, ro, de, fr, zh; every key is parity-tested.
-- **PWA** — static adapter, service worker precache, manifest, offline deep links.
+- **PWA** — static adapter, service worker precache, network-first navigation, offline deep links, and a boot watchdog with a one-tap repair for stale caches.
 
 ## Layout
 
