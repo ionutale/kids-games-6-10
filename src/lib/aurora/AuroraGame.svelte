@@ -1,9 +1,27 @@
 <script>
   import { t } from '$lib/stores/locale';
-  import { AURORA_LEVEL_COUNT, starsForAuroraMoves } from '$lib/aurora/levels.js';
+  import {
+    AURORA_LEVELS_PER_WORLD,
+    AURORA_WORLD_COUNT,
+    getAuroraWorld,
+    starsForAuroraMoves,
+  } from '$lib/aurora/levels.js';
   import { initialMirrorDirs, keyOf, traceBeam } from '$lib/aurora/beam.js';
 
   let { level, onComplete } = $props();
+
+  const world = $derived(getAuroraWorld(level.world));
+
+  // The beam enters the board on the cell nearest its off-board source:
+  // left (c < 0), right (c >= size), top (r < 0) or bottom (r >= size).
+  const sourceCell = $derived.by(() => {
+    const size = level.size;
+    if (level.source.c < 0) return { r: level.source.r, c: 0 };
+    if (level.source.c >= size) return { r: level.source.r, c: size - 1 };
+    if (level.source.r < 0) return { r: 0, c: level.source.c };
+    if (level.source.r >= size) return { r: size - 1, c: level.source.c };
+    return { r: level.source.r, c: level.source.c };
+  });
 
   // The route mounts a fresh game for each level id.
   // svelte-ignore state_referenced_locally
@@ -31,9 +49,25 @@
   );
   const won = $derived(beam.lit);
   const stars = $derived(starsForAuroraMoves(moves, level.par));
-  const pointList = $derived(beam.points.map((point) => `${point.x},${point.y}`).join(' '));
+  const visiblePoints = $derived(
+    beam.points.filter(
+      (point) => point.x >= 0 && point.x <= level.size && point.y >= 0 && point.y <= level.size,
+    ),
+  );
+  const pointList = $derived(visiblePoints.map((point) => `${point.x},${point.y}`).join(' '));
+  const beamStart = $derived(visiblePoints[0] ?? null);
+  const beamEnd = $derived(visiblePoints[visiblePoints.length - 1] ?? null);
   const targetSet = $derived(new Set(level.targets));
   const wallSet = $derived(new Set(level.walls));
+
+  // Slot 5 ends the world: continue on another level, otherwise go back to
+  // the world page (or the landing after the final world).
+  const nextHref = $derived.by(() => {
+    if (level.slot < AURORA_LEVELS_PER_WORLD) return `/games/aurora-mirrors/play/${level.id + 1}`;
+    if (world.id < AURORA_WORLD_COUNT) return `/games/aurora-mirrors/world/${world.id}`;
+    return '/games/aurora-mirrors';
+  });
+  const nextLabel = $derived(level.slot < AURORA_LEVELS_PER_WORLD ? 'nextLevel' : 'levelSelect');
 
   $effect(() => {
     if (!won || recorded) return;
@@ -65,11 +99,11 @@
   }
 </script>
 
-<section class="game glass" style:--accent="#5eead4">
+<section class="game glass" style:--accent={world.accent}>
   <div class="gamehead">
     <div>
-      <span class="kicker">{$t('auroraWorld1')} · {$t('level', { n: level.id })}</span>
-      <h2>{$t(level.nameKey)}</h2>
+      <span class="kicker">{$t('auroraName')} · {$t(world.nameKey)}</span>
+      <h2>{$t('level', { n: level.slot })}</h2>
     </div>
     <div class="counts">
       <span>{moves} {$t('auroraMoves')}</span>
@@ -81,7 +115,7 @@
     <div
       class="board"
       style={`grid-template-columns: repeat(${level.size}, minmax(0, 1fr));`}
-      aria-label={`${$t(level.nameKey)} mirror board`}
+      aria-label={$t('auroraName')}
     >
       <svg
         class="beam"
@@ -89,7 +123,14 @@
         preserveAspectRatio="none"
         aria-hidden="true"
       >
-        <polyline points={pointList} />
+        <polyline class="beam-core" points={pointList} />
+        <polyline class="beam-flow" points={pointList} />
+        {#if beamStart}
+          <circle class="beam-start" cx={beamStart.x} cy={beamStart.y} r="0.075" />
+        {/if}
+        {#if beamEnd}
+          <circle class="beam-end" cx={beamEnd.x} cy={beamEnd.y} r="0.085" />
+        {/if}
         {#each beam.hits as hit (hit)}
           {@const [r, c] = hit.split('-').map(Number)}
           <circle class="burst" cx={c + 0.5} cy={r + 0.5} r="0.34" />
@@ -109,9 +150,9 @@
             onclick={() => rotate(cell.r, cell.c)}
             aria-label={`Rotate mirror row ${cell.r + 1}, column ${cell.c + 1}`}
           >
-            {dirs[key] === '/' ? '╱' : '╲'}
+            <span class="mirror-glyph" class:flip={dirs[key] !== '/'} aria-hidden="true">╱</span>
           </button>
-        {:else if cell.r === level.source.r && cell.c === 0}
+        {:else if cell.r === sourceCell.r && cell.c === sourceCell.c}
           <span class="cell source" aria-label="Light source">☀</span>
         {:else}
           <span class="cell"></span>
@@ -141,14 +182,7 @@
         {level.par}
       </p>
       <div class="resultactions">
-        <a
-          class="btn primary"
-          href={level.id < AURORA_LEVEL_COUNT
-            ? `/games/aurora-mirrors/play/${level.id + 1}`
-            : '/games/aurora-mirrors'}
-        >
-          {level.id < AURORA_LEVEL_COUNT ? $t('nextLevel') : $t('levelSelect')}
-        </a>
+        <a class="btn primary" href={nextHref}>{$t(nextLabel)}</a>
         <button class="btn" type="button" onclick={reset}>{$t('retry')}</button>
       </div>
     </div>
@@ -250,6 +284,17 @@
   .mirror:active {
     transform: scale(0.9);
   }
+  .mirror-glyph {
+    display: block;
+    line-height: 1;
+    transform: rotate(0deg);
+    transform-origin: 50% 50%;
+    transition: transform 0.22s var(--ease);
+    will-change: transform;
+  }
+  .mirror-glyph.flip {
+    transform: rotate(90deg);
+  }
   .source {
     color: var(--gold);
     text-shadow: 0 0 14px rgba(251, 191, 36, 0.8);
@@ -277,19 +322,87 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    overflow: visible;
+    overflow: hidden;
   }
-  polyline {
+  .beam-core,
+  .beam-flow {
     fill: none;
-    stroke: #7dd3fc;
-    stroke-width: 0.09;
     stroke-linecap: round;
     stroke-linejoin: round;
+    pointer-events: none;
+  }
+  .beam-core {
+    stroke: #7dd3fc;
+    stroke-width: 0.09;
     filter: drop-shadow(0 0 4px #7dd3fc);
+    animation: beam-breathe 2.8s ease-in-out infinite;
+  }
+  .beam-flow {
+    stroke: #f3fdff;
+    stroke-width: 0.032;
+    stroke-dasharray: 0.26 1.12;
+    filter: drop-shadow(0 0 2px #bff3ff);
+    animation: beam-flow 1.6s linear infinite;
+  }
+  .beam-start {
+    fill: #eaf8ff;
+    stroke: #7dd3fc;
+    stroke-width: 0.04;
+    filter: drop-shadow(0 0 5px rgba(125, 211, 252, 0.95));
+  }
+  .beam-end {
+    fill: #fff8c8;
+    stroke: #7dd3fc;
+    stroke-width: 0.045;
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.9));
+    animation: beam-end-pulse 1.8s ease-in-out infinite;
+  }
+  .source {
+    animation: source-pulse 2.6s ease-in-out infinite;
   }
   .burst {
     fill: rgba(255, 248, 200, 0.8);
     filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.9));
+  }
+  @keyframes beam-breathe {
+    0%,
+    100% {
+      opacity: 0.78;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @keyframes beam-flow {
+    to {
+      stroke-dashoffset: -1.38;
+    }
+  }
+  @keyframes beam-end-pulse {
+    0%,
+    100% {
+      opacity: 0.68;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @keyframes source-pulse {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.45));
+    }
+    50% {
+      filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.9));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .beam-core,
+    .beam-flow,
+    .beam-end,
+    .source {
+      animation: none;
+    }
   }
   .status {
     min-height: 34px;

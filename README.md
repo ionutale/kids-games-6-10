@@ -4,11 +4,11 @@ Big-kid games for ages 6–10. Frost Breaker and Aurora Mirrors.
 
 Frost Breaker: aim ice poppers at a frozen sculpture, chain the glowing crystal cores, and clear 90% before the pods run out. The shipped campaign runs 10 worlds of 5 levels each: 20 hand-built silhouettes and 30 remixes, four pod behaviours, 90/95/100 star thresholds, a gentle “so close” retry, and no lost progress.
 
-Aurora Mirrors: rotate mirrors to bend a light beam through an ice grid and wake every crystal. The first playable world is five handcrafted levels with par-move three-star goals and its own save file.
+Aurora Mirrors: rotate mirrors to bend a light beam through an ice grid and wake every crystal. The campaign runs six worlds of five handcrafted levels, with par-move three-star goals, sequential world unlocks, and its own save file.
 
 ## Status
 
-Playable production games: hub + Frost Breaker (50 levels) + Aurora Mirrors (5-level opening world), six locales, PWA offline, generated audio.
+Playable production games: hub + Frost Breaker (50 levels) + Aurora Mirrors (30 levels), six locales, PWA offline, generated audio.
 
 The throwaway one-sculpture feel test is preserved on the `prototype/frost-breaker` branch and in `prototype/frost-breaker.html`.
 
@@ -35,8 +35,9 @@ Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `
 
 - **Hub** (`/`) — frosted-aurora game launcher, campaign progress, and a link to settings.
 - **Settings** (`/settings`) — persisted music and sound-effects volume, mute, and a six-language picker.
-- **Aurora Mirrors** (`/games/aurora-mirrors`) — five-level opening world, par-move stars, its own `auroraMirrors1` save, and a mirror guide.
-- **Aurora game** (`/games/aurora-mirrors/play/[1–5]`) — 7×7 beam puzzle with tap-rotate mirrors, undo/reset, live crystals, and a best-score result card.
+- **Aurora Mirrors** (`/games/aurora-mirrors`) — six-world map with sequential unlocks, par-move stars, and its own `auroraMirrors1` save.
+- **Aurora world** (`/games/aurora-mirrors/world/[1–6]`) — five level nodes, stars, par, and world unlock state.
+- **Aurora game** (`/games/aurora-mirrors/play/[1–30]`) — 7×7 beam puzzle with tap-rotate mirrors, undo/reset, live crystals, all-edge emitters, and a best-score result card.
 - **Frost Breaker world map** (`/games/frost-breaker`) — ten world cards with best stars and “how to play” cards. Worlds open in order; each open world shows its five levels.
 - **World page** (`/games/frost-breaker/world/[1–10]`) — five level nodes, free to pick in any order inside an open world.
 - **Game** (`/games/frost-breaker/play/[1–50]`) — 720×1280 playfield, drag-back slingshot, dotted bank-shot aim preview, live 90% HUD, pod tray, soft-fail and star result overlays.
@@ -45,7 +46,7 @@ Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `
 - **Rules** (`src/lib/frost-breaker/rules.js`) — 90% clears, 95% is two stars, 100% is three; no 100% display until every cell is gone.
 - **Progress** (`src/lib/frost-breaker/progress.js`) — fresh `frostBreaker2` save key; older star data is deliberately ignored. Completing all five levels of a world at 90% or better opens the next world.
 - **Engine** (`src/lib/frost-breaker/engine.js`, `walls.js`) — deterministic cell fracture, connected-mass collapse, spike/ghost/copter/split behaviours, outer side rails and ceiling with an open bottom, 0–2 interior bumpers per level, bank-shot aim preview, and a short-fuse split pod that fans into three. Particles and screen shake.
-- **Aurora rules** (`src/lib/aurora/beam.js`, `levels.js`) — pure beam reflection, wall blocking, five validated levels, a full-orientation solver, and par-move star thresholds.
+- **Aurora rules** (`src/lib/aurora/beam.js`, `levels.js`) — pure beam reflection, wall blocking, 30 validated levels, a full-orientation solver, sequential world unlocks, and par-move star thresholds.
 - **Audio** (`src/lib/frost-breaker/audio.js`, `static/audio/`) — Studio-generated SFX and three seamless Studio music loops: garden, frost, royal, with a procedural WebAudio fallback. See [docs/audio.md](docs/audio.md).
 - **Locales** — en, it, ro, de, fr, zh; every key is parity-tested.
 - **PWA** — static adapter, service worker precache, network-first navigation, offline deep links, and a boot watchdog with a one-tap repair for stale caches.
@@ -91,7 +92,7 @@ The display name is **Kids Games 6–10**. The repository directory and package 
 ## Next
 
 - Owner playtest with a 6–10 year old; tune pod counts and core placement from notes.
-- Playtest the five-level Aurora Mirrors opening world; if the loop lands, expand it to six worlds / 30 levels.
+- Playtest the 30-level Aurora Mirrors campaign and tune the later-world mirror density.
 - Final ice-sculpture art pass (the current silhouettes are deliberately blocky cell mosaics).
 - Attach `kids-games-6-10.aiu-media.com` to the Worker.
 - End-to-end browser coverage for hub → world map → world → game → result → next level.

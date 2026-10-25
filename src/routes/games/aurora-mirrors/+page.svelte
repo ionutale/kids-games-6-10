@@ -2,17 +2,28 @@
   import { onMount } from 'svelte';
   import GameShell from '$lib/components/GameShell.svelte';
   import { t } from '$lib/stores/locale';
-  import { AURORA_LEVELS, AURORA_LEVEL_COUNT } from '$lib/aurora/levels.js';
+  import {
+    AURORA_LEVEL_COUNT,
+    AURORA_WORLDS,
+    getAuroraLevel,
+    getAuroraWorld,
+    worldLevels,
+  } from '$lib/aurora/levels.js';
   import {
     auroraStarsTotal,
+    auroraWorldStars,
     emptyAuroraProgress,
     isAuroraComplete,
+    isAuroraWorldComplete,
+    isAuroraWorldUnlocked,
     loadAuroraProgress,
     nextAuroraLevel,
   } from '$lib/aurora/progress.js';
 
   let progress = $state(emptyAuroraProgress());
   const current = $derived(nextAuroraLevel(progress));
+  const currentLevel = $derived(getAuroraLevel(current));
+  const currentWorld = $derived(getAuroraWorld(currentLevel.world));
   const totalStars = $derived(auroraStarsTotal(progress));
   const mastered = $derived(isAuroraComplete(progress));
 
@@ -31,7 +42,7 @@
       <span class="heroicon" aria-hidden="true">🪞</span>
       <div class="herotext">
         <span class="pill">
-          {$t('auroraWorld1')} · {$t('currentLevel')}
+          {$t(currentWorld.nameKey)} · {$t('currentLevel')}
           {#if mastered}· {$t('mastered')}{/if}
         </span>
         <h2>{$t('auroraName')}</h2>
@@ -42,31 +53,43 @@
       </a>
     </section>
 
-    <section class="levels glass">
+    <section class="worlds glass">
       <div class="sectionhead">
         <div>
-          <h3>{$t('auroraWorld1')}</h3>
+          <h3>{$t('levelSelect')}</h3>
           <p>{$t('auroraGoal')}</p>
         </div>
         <span class="starscore">{totalStars} / {AURORA_LEVEL_COUNT * 3} ★</span>
       </div>
 
-      <div class="levelgrid">
-        {#each AURORA_LEVELS as level (level.id)}
-          <a
-            class="level"
-            class:done={progress.stars[level.id - 1] > 0}
-            href={`/games/aurora-mirrors/play/${level.id}`}
-          >
-            <span class="num">{String(level.slot).padStart(2, '0')}</span>
-            <span class="lname">{$t(level.nameKey)}</span>
-            <span class="stars" aria-label={`${progress.stars[level.id - 1]} / 3 stars`}>
-              {#each [1, 2, 3] as star (star)}
-                <span class:on={star <= progress.stars[level.id - 1]} aria-hidden="true">★</span>
-              {/each}
-            </span>
-            <span class="par">{$t('auroraPar')} {level.par}</span>
-          </a>
+      <div class="worldgrid">
+        {#each AURORA_WORLDS as world (world.id)}
+          {@const unlocked = isAuroraWorldUnlocked(progress, world.id)}
+          {@const complete = isAuroraWorldComplete(progress, world.id)}
+          {@const isCurrent = currentWorld.id === world.id && !mastered}
+          {#if unlocked}
+            <a
+              class="wcard"
+              class:is-current={isCurrent}
+              style:--accent={world.accent}
+              href={`/games/aurora-mirrors/world/${world.id}`}
+            >
+              <span class="wname">{$t(world.nameKey)}</span>
+              <span class="pips" aria-hidden="true">
+                {#each worldLevels(world.id) as level (level.id)}
+                  <span class:on={progress.stars[level.id - 1] > 0}></span>
+                {/each}
+              </span>
+              <span class="wstars">{auroraWorldStars(progress, world.id)} / 15 ★</span>
+              {#if complete}<span class="badge" aria-hidden="true">🎓</span>{/if}
+            </a>
+          {:else}
+            <div class="wcard locked" style:--accent={world.accent} aria-disabled="true">
+              <span class="wname">{$t(world.nameKey)}</span>
+              <span class="lockicon" aria-hidden="true">🔒</span>
+              <span class="lockmsg">{$t('auroraLocked')}</span>
+            </div>
+          {/if}
         {/each}
       </div>
     </section>
@@ -151,8 +174,8 @@
       width: 100%;
     }
   }
-  .levels {
-    padding: 18px;
+  .worlds {
+    padding: 20px;
     border-radius: var(--radius-lg);
   }
   .sectionhead {
@@ -160,7 +183,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
   .sectionhead h3 {
     font-size: 18px;
@@ -180,77 +203,102 @@
     white-space: nowrap;
     padding-top: 2px;
   }
-  .levelgrid {
+  .worldgrid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
   }
-  @media (max-width: 680px) {
-    .levelgrid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-  @media (max-width: 460px) {
-    .levelgrid {
+  @media (max-width: 760px) {
+    .worldgrid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
-  .level {
-    min-height: 104px;
-    padding: 11px 10px;
-    border-radius: 15px;
-    border: 1px solid rgba(157, 228, 255, 0.16);
-    background: linear-gradient(155deg, rgba(94, 234, 212, 0.08), rgba(5, 20, 34, 0.56));
+  @media (max-width: 460px) {
+    .worldgrid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .wcard {
+    position: relative;
+    min-height: 108px;
+    padding: 14px 14px 16px;
+    border-radius: 18px;
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    background: linear-gradient(
+      168deg,
+      color-mix(in srgb, var(--accent) 10%, rgba(6, 24, 40, 0.62)),
+      rgba(5, 20, 34, 0.7)
+    );
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 8px;
+    text-align: center;
     transition:
       transform 0.14s var(--ease),
-      border-color 0.14s ease,
-      background 0.14s ease;
+      border-color 0.16s ease,
+      box-shadow 0.16s ease;
   }
-  .level:hover {
+  .wcard:hover {
+    border-color: var(--accent);
     transform: translateY(-2px);
-    border-color: rgba(94, 234, 212, 0.55);
-    background: linear-gradient(155deg, rgba(94, 234, 212, 0.14), rgba(5, 20, 34, 0.6));
   }
-  .level:active {
+  .wcard:active {
     transform: scale(0.97);
   }
-  .level.done {
-    border-color: rgba(94, 234, 212, 0.34);
+  .wcard.is-current {
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent),
+      0 0 24px color-mix(in srgb, var(--accent) 35%, transparent);
   }
-  .num {
-    color: var(--muted);
-    font-size: 10px;
+  .wcard.locked {
+    opacity: 0.55;
+    filter: grayscale(0.7);
+  }
+  .wname {
+    font-size: 14px;
     font-weight: 800;
-    letter-spacing: 1px;
+    line-height: 1.2;
+    letter-spacing: -0.2px;
   }
-  .lname {
-    font-size: 12.5px;
-    font-weight: 750;
-    line-height: 1.15;
-  }
-  .stars {
+  .pips {
     display: flex;
-    gap: 1px;
-    margin-top: 2px;
+    gap: 5px;
   }
-  .stars span {
-    color: rgba(255, 255, 255, 0.15);
-    font-size: 11px;
+  .pips span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+  }
+  .pips span.on {
+    background: var(--gold);
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+  }
+  .wstars {
+    font-size: 11.5px;
+    font-weight: 750;
+    color: var(--gold);
+    letter-spacing: 0.4px;
+  }
+  .badge {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 15px;
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.55));
+  }
+  .lockicon {
+    font-size: 22px;
     line-height: 1;
   }
-  .stars span.on {
-    color: var(--gold);
-    text-shadow: 0 0 7px rgba(251, 191, 36, 0.55);
-  }
-  .par {
-    color: var(--muted);
-    font-size: 9px;
+  .lockmsg {
+    font-size: 10.5px;
     font-weight: 650;
+    line-height: 1.3;
+    color: var(--ink-soft);
   }
   .howrow {
     display: grid;

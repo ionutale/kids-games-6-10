@@ -3,16 +3,23 @@ import { initialMirrorDirs, reflect, solveLevel, traceBeam } from '$lib/aurora/b
 import {
   AURORA_LEVELS,
   AURORA_LEVEL_COUNT,
+  AURORA_LEVELS_PER_WORLD,
+  AURORA_WORLDS,
+  AURORA_WORLD_COUNT,
   getAuroraLevel,
   isAuroraPerfect,
   starsForAuroraMoves,
+  worldLevels,
 } from '$lib/aurora/levels.js';
 import {
   AURORA_PROGRESS_KEY,
   auroraStarsTotal,
+  auroraWorldStars,
   emptyAuroraProgress,
   isAuroraComplete,
   isAuroraLevelComplete,
+  isAuroraWorldComplete,
+  isAuroraWorldUnlocked,
   loadAuroraProgress,
   nextAuroraLevel,
   saveAuroraProgress,
@@ -31,6 +38,12 @@ function memoryStorage(initial = {}) {
       return data.size;
     },
   };
+}
+
+function progressWith(levels, stars = 1) {
+  const progress = emptyAuroraProgress();
+  for (const level of levels) progress.stars[level - 1] = stars;
+  return progress;
 }
 
 beforeEach(() => {
@@ -85,9 +98,19 @@ describe('beam reflection', () => {
 });
 
 describe('Aurora Mirrors levels', () => {
-  it('ships five handcrafted levels', () => {
-    expect(AURORA_LEVEL_COUNT).toBe(5);
-    expect(AURORA_LEVELS).toHaveLength(5);
+  it('ships thirty unique levels across six worlds of five', () => {
+    expect(AURORA_LEVEL_COUNT).toBe(30);
+    expect(AURORA_WORLD_COUNT).toBe(6);
+    expect(AURORA_LEVELS_PER_WORLD).toBe(5);
+    expect(AURORA_LEVELS).toHaveLength(30);
+    expect(new Set(AURORA_LEVELS.map((level) => level.id)).size).toBe(30);
+    expect(AURORA_WORLDS).toHaveLength(6);
+
+    for (const world of AURORA_WORLDS) {
+      const levels = worldLevels(world.id);
+      expect(levels).toHaveLength(5);
+      expect(levels.every((level) => level.world === world.id)).toBe(true);
+    }
   });
 
   it('every level starts unsolved and is solvable at the documented par', () => {
@@ -110,7 +133,7 @@ describe('Aurora Mirrors levels', () => {
 
   it('clamps level routes and awards stars by move count', () => {
     expect(getAuroraLevel(0).id).toBe(1);
-    expect(getAuroraLevel(99).id).toBe(5);
+    expect(getAuroraLevel(99).id).toBe(30);
     expect(starsForAuroraMoves(2, 2)).toBe(3);
     expect(starsForAuroraMoves(4, 2)).toBe(2);
     expect(starsForAuroraMoves(5, 2)).toBe(1);
@@ -118,11 +141,27 @@ describe('Aurora Mirrors levels', () => {
 });
 
 describe('Aurora progress', () => {
-  it('starts empty and loads parsing failures as empty', () => {
-    expect(emptyAuroraProgress().stars).toEqual([0, 0, 0, 0, 0]);
-    expect(loadAuroraProgress()).toEqual(emptyAuroraProgress());
+  it('starts with thirty empty stars and loads malformed storage as empty', () => {
+    const empty = emptyAuroraProgress();
+    expect(empty.stars).toHaveLength(30);
+    expect(empty.stars.every((stars) => stars === 0)).toBe(true);
+    expect(loadAuroraProgress()).toEqual(empty);
+
     localStorage.setItem(AURORA_PROGRESS_KEY, '{not json');
-    expect(loadAuroraProgress()).toEqual(emptyAuroraProgress());
+    expect(loadAuroraProgress()).toEqual(empty);
+
+    localStorage.setItem(AURORA_PROGRESS_KEY, JSON.stringify({ stars: 'not an array' }));
+    expect(loadAuroraProgress()).toEqual(empty);
+  });
+
+  it('migrates a five-star save into thirty stars', () => {
+    localStorage.setItem(AURORA_PROGRESS_KEY, JSON.stringify({ stars: [3, 2, 1, 0, 1] }));
+
+    const migrated = loadAuroraProgress();
+    expect(migrated.stars).toHaveLength(30);
+    expect(migrated.stars.slice(0, 5)).toEqual([3, 2, 1, 0, 1]);
+    expect(migrated.stars.slice(5).every((stars) => stars === 0)).toBe(true);
+    expect(auroraStarsTotal(migrated)).toBe(7);
   });
 
   it('keeps the best stars and normalizes stored values', () => {
@@ -131,16 +170,74 @@ describe('Aurora progress', () => {
     expect(loadAuroraProgress().stars[1]).toBe(2);
     expect(auroraStarsTotal(loadAuroraProgress())).toBe(2);
     expect(isAuroraLevelComplete(loadAuroraProgress(), 2)).toBe(true);
+    expect(isAuroraLevelComplete(loadAuroraProgress(), 3)).toBe(false);
+
+    saveAuroraStars(30, 3);
+    expect(loadAuroraProgress().stars[29]).toBe(3);
+    expect(auroraStarsTotal(loadAuroraProgress())).toBe(5);
+  });
+
+  it('sums the five levels of a world and completes it', () => {
+    const progress = progressWith([1], 3);
+    progress.stars[1] = 2;
+
+    expect(auroraWorldStars(progress, 1)).toBe(5);
+    expect(auroraWorldStars(progress, 2)).toBe(0);
+    expect(isAuroraWorldComplete(progress, 1)).toBe(false);
+
+    for (let level = 1; level <= 5; level++) progress.stars[level - 1] = 1;
+    expect(isAuroraWorldComplete(progress, 1)).toBe(true);
+    expect(isAuroraWorldComplete(progress, 2)).toBe(false);
+    expect(auroraWorldStars(progress, 1)).toBe(5);
+  });
+
+  it('unlocks worlds one at a time and clamps world ids', () => {
+    const progress = emptyAuroraProgress();
+    expect(isAuroraWorldUnlocked(progress, 1)).toBe(true);
+    expect(isAuroraWorldUnlocked(progress, 2)).toBe(false);
+    expect(isAuroraWorldUnlocked(progress, 6)).toBe(false);
+
+    for (let level = 1; level <= 4; level++) progress.stars[level - 1] = 1;
+    expect(isAuroraWorldUnlocked(progress, 2)).toBe(false);
+    progress.stars[4] = 1;
+    expect(isAuroraWorldUnlocked(progress, 2)).toBe(true);
+    expect(isAuroraWorldUnlocked(progress, 3)).toBe(false);
+
+    for (let level = 6; level <= 10; level++) progress.stars[level - 1] = 1;
+    expect(isAuroraWorldUnlocked(progress, 3)).toBe(true);
+    expect(isAuroraWorldUnlocked(progress, 4)).toBe(false);
+
+    for (let level = 11; level <= 25; level++) progress.stars[level - 1] = 1;
+    expect(isAuroraWorldUnlocked(progress, 6)).toBe(true);
+
+    expect(isAuroraWorldUnlocked(progress, 0)).toBe(true);
+    expect(isAuroraWorldUnlocked(progress, 7)).toBe(isAuroraWorldUnlocked(progress, 6));
+    expect(isAuroraWorldUnlocked(progress, 99)).toBe(isAuroraWorldUnlocked(progress, 6));
   });
 
   it('finds the next unfinished level and detects a complete run', () => {
     expect(nextAuroraLevel(emptyAuroraProgress())).toBe(1);
-    for (let level = 1; level <= 5; level++) saveAuroraStars(level, 3);
+
+    const partial = progressWith([1, 2], 3);
+    partial.stars[2] = 2;
+    expect(nextAuroraLevel(partial)).toBe(4);
+
+    const almost = progressWith(
+      Array.from({ length: 30 }, (_, index) => index + 1),
+      3,
+    );
+    almost.stars[4] = 0;
+    expect(nextAuroraLevel(almost)).toBe(5);
+    expect(isAuroraComplete(almost)).toBe(false);
+
+    for (let level = 1; level <= 30; level++) saveAuroraStars(level, 3);
     const complete = loadAuroraProgress();
-    expect(auroraStarsTotal(complete)).toBe(15);
+    expect(auroraStarsTotal(complete)).toBe(90);
     expect(isAuroraComplete(complete)).toBe(true);
     expect(isAuroraPerfect(complete.stars)).toBe(true);
-    expect(nextAuroraLevel(complete)).toBe(5);
+    expect(nextAuroraLevel(complete)).toBe(30);
+
+    expect(isAuroraPerfect(Array(5).fill(3))).toBe(false);
   });
 
   it('saves calls and survives no storage', () => {
@@ -148,5 +245,6 @@ describe('Aurora progress', () => {
     delete globalThis.localStorage;
     expect(loadAuroraProgress()).toEqual(emptyAuroraProgress());
     expect(() => saveAuroraStars(1, 3)).not.toThrow();
+    expect(() => saveAuroraProgress(emptyAuroraProgress())).not.toThrow();
   });
 });

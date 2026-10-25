@@ -10,8 +10,8 @@
     loadProgress,
     nextLevel,
   } from '$lib/frost-breaker/progress.js';
-  import { AURORA_LEVELS } from '$lib/aurora/levels.js';
-  import { emptyAuroraProgress, loadAuroraProgress } from '$lib/aurora/progress.js';
+  import { AURORA_WORLDS } from '$lib/aurora/levels.js';
+  import { emptyAuroraProgress, isAuroraWorldComplete, loadAuroraProgress } from '$lib/aurora/progress.js';
 
   let progress = $state(emptyProgress());
   let auroraProgress = $state(emptyAuroraProgress());
@@ -60,8 +60,8 @@
       <span class="tilename">{$t('auroraName')}</span>
       <span class="tiledesc">{$t('auroraDesc')}</span>
       <span class="mini" aria-hidden="true">
-        {#each AURORA_LEVELS as level (level.id)}
-          <span class="dot" class:done={auroraProgress.stars[level.id - 1] > 0}></span>
+        {#each AURORA_WORLDS as world (world.id)}
+          <span class="dot" class:done={isAuroraWorldComplete(auroraProgress, world.id)}></span>
         {/each}
       </span>
     </a>

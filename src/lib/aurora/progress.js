@@ -1,4 +1,4 @@
-import { AURORA_LEVEL_COUNT } from './levels.js';
+import { AURORA_LEVEL_COUNT, getAuroraWorld, worldLevels } from './levels.js';
 
 export const AURORA_PROGRESS_KEY = 'auroraMirrors1';
 
@@ -18,6 +18,7 @@ export function loadAuroraProgress() {
   if (typeof localStorage === 'undefined') return emptyAuroraProgress();
   try {
     const raw = JSON.parse(localStorage.getItem(AURORA_PROGRESS_KEY) || 'null');
+    // Older saves stored five stars; the padded array keeps those values.
     return { stars: normalizeStars(raw) };
   } catch {
     return emptyAuroraProgress();
@@ -57,4 +58,24 @@ export function nextAuroraLevel(progress) {
   const stars = normalizeStars(progress);
   const index = stars.findIndex((value) => value === 0);
   return index < 0 ? AURORA_LEVEL_COUNT : index + 1;
+}
+
+function worldIdOf(worldId) {
+  return getAuroraWorld(worldId).id;
+}
+
+export function auroraWorldStars(progress, worldId) {
+  const stars = normalizeStars(progress);
+  return worldLevels(worldId).reduce((total, level) => total + stars[level.id - 1], 0);
+}
+
+export function isAuroraWorldComplete(progress, worldId) {
+  const stars = normalizeStars(progress);
+  return worldLevels(worldId).every((level) => stars[level.id - 1] > 0);
+}
+
+export function isAuroraWorldUnlocked(progress, worldId) {
+  const id = worldIdOf(worldId);
+  if (id === 1) return true;
+  return isAuroraWorldComplete(progress, id - 1);
 }
