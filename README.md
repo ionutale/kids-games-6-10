@@ -1,6 +1,6 @@
 # Kids Games 6–10
 
-Big-kid games for ages 6–10. Frost Breaker, Aurora Mirrors, and Penguin Code.
+Big-kid games for ages 6–10. Frost Breaker, Aurora Mirrors, Penguin Code, and Number Ice.
 
 Frost Breaker: aim ice poppers at a frozen sculpture, chain the glowing crystal cores, and clear 90% before the pods run out. The shipped campaign runs 10 worlds of 5 levels each: 20 hand-built silhouettes and 30 remixes, four pod behaviours, 90/95/100 star thresholds, a gentle “so close” retry, and no lost progress.
 
@@ -8,9 +8,11 @@ Aurora Mirrors: rotate mirrors to bend a light beam through an ice grid and wake
 
 Penguin Code: build a short sequence of arrow commands and guide a penguin around walls and water to every fish and the igloo. Six worlds of five levels, a command limit, and stars for shorter programs.
 
+Number Ice: tap 2–4 numbers that add up to the target, melt them, and let the ice fall and refill. Six worlds of five levels, par-move stars, and its own save file.
+
 ## Status
 
-Playable production games: hub + Frost Breaker (50 levels) + Aurora Mirrors (30 levels) + Penguin Code (30 levels), six locales, PWA offline, generated audio.
+Playable production games: hub + Frost Breaker (50 levels) + Aurora Mirrors (30 levels) + Penguin Code (30 levels) + Number Ice (30 levels), six locales, PWA offline, generated audio.
 
 The throwaway one-sculpture feel test is preserved on the `prototype/frost-breaker` branch and in `prototype/frost-breaker.html`.
 
@@ -40,6 +42,11 @@ Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `
 - **Penguin Code** (`/games/penguin-code`) — six-world command-programming game with its own `penguinCode1` save.
 - **Penguin Code world** (`/games/penguin-code/world/[1–6]`) — five level nodes, command limits, stars, and sequential world locks.
 - **Penguin Code game** (`/games/penguin-code/play/[1–30]`) — 7×7 grid, arrow program builder, step-by-step penguin run, fish and water rules, undo/reset, and a star result.
+- **Number Ice** (`/games/number-ice`) — six-world number-matching puzzle with sequential unlocks, par-move stars, and its own `numberIce1` save.
+- **Number Ice world** (`/games/number-ice/world/[1–6]`) — five level nodes with target sums, move budgets, stars, and world unlock state.
+- **Number Ice game** (`/games/number-ice/play/[1–30]`) — 5×5 to 7×7 ice grid, tap 2–4 tiles that sum to the target, melt/fall/refill, and a star result.
+- **Number Ice rules** (`src/lib/number-ice/board.js`, `levels.js`) — seeded boards, deterministic 2–4 tile selection search, guaranteed legal moves after refills, and 30 validated levels.
+- **Number Ice progress** (`src/lib/number-ice/progress.js`) — fresh `numberIce1` save key, best stars, and sequential world unlocks.
 - **Aurora Mirrors** (`/games/aurora-mirrors`) — six-world map with sequential unlocks, par-move stars, and its own `auroraMirrors1` save.
 - **Aurora world** (`/games/aurora-mirrors/world/[1–6]`) — five level nodes, stars, par, and world unlock state.
 - **Aurora game** (`/games/aurora-mirrors/play/[1–30]`) — 7×7 beam puzzle with tap-rotate mirrors, undo/reset, live crystals, all-edge emitters, and a best-score result card.
@@ -65,6 +72,7 @@ src/
   lib/
     components/               SoundToggle, GameShell, FrostGame, ShapePreview, WinOverlay
     frost-breaker/            audio, engine, grid, levels, progress, rules, shapes, walls
+    number-ice/               board rules, levels, NumberIceGame, progress
     i18n/messages.js          six-locale catalogs
     stores/                   locale + settings
   routes/
@@ -72,6 +80,9 @@ src/
     games/frost-breaker/      world map
     games/frost-breaker/world/[n]/   world page
     games/frost-breaker/play/[level]/ game
+    games/number-ice/         number-matching game
+    games/number-ice/world/[n]/      world page
+    games/number-ice/play/[level]/   game
 static/audio/                 generated SFX + three music loops
 static/icons/                 app icon
 tests/unit/                   rules, levels, progress, stars, walls, locale parity
@@ -89,6 +100,8 @@ prototype/frost-breaker.html  throwaway feel test
 - 1–3 crystal cores per sculpture; hitting one chain-shatters a radius.
 - Ten worlds of five levels; sequential worlds, free-pick inside an open world.
 - Frosted side rails and ceiling, 0–2 interior bumpers, hand-rolled AABB + destructible cell grid.
+- Number Ice uses six worlds of five levels, 5×5 → 7×7 seeded boards, and 2–4 tile selections that sum to the target.
+- Number Ice always guarantees a legal move after a refill, and stars follow par moves (3 at par, 2 within two extra moves, else 1).
 - Frosted-aurora art direction; fresh SvelteKit app with deliberate ports from the 2–5 hub (PWA, shell, audio patterns).
 
 ## Naming
@@ -100,6 +113,7 @@ The display name is **Kids Games 6–10**. The repository directory and package 
 - Owner playtest with a 6–10 year old; tune pod counts and core placement from notes.
 - Playtest the 30-level Aurora Mirrors campaign and tune the later-world mirror density.
 - Playtest Penguin Code’s later worlds and tune command limits and water density.
+- Playtest Number Ice’s later worlds and tune targets, goals, move budgets, and par.
 - Final ice-sculpture art pass (the current silhouettes are deliberately blocky cell mosaics).
 - Attach `kids-games-6-10.aiu-media.com` to the Worker.
 - End-to-end browser coverage for hub → world map → world → game → result → next level.
