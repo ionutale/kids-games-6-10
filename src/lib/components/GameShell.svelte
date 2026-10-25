@@ -1,5 +1,6 @@
 <script>
   import SoundToggle from '$lib/components/SoundToggle.svelte';
+  import UiIcon from '$lib/components/UiIcon.svelte';
   import { t } from '$lib/stores/locale';
 
   let { backHref = '/', title = '', settingsLink = true, soundToggle = true, children } = $props();
@@ -7,13 +8,17 @@
 
 <div class="shell">
   <header class="bar">
-    <a class="icon-btn" href={backHref} aria-label={$t('back')}>←</a>
+    <a class="icon-btn" href={backHref} aria-label={$t('back')}>
+      <span class="icon-slot"><UiIcon name="arrow-left" /></span>
+    </a>
     <div class="heading">
       <span class="kicker">{$t('appTitle')}</span>
       <h1>{title}</h1>
     </div>
     {#if settingsLink}
-      <a class="icon-btn" href="/settings" aria-label={$t('settings')}>⚙️</a>
+      <a class="icon-btn" href="/settings" aria-label={$t('settings')}>
+        <span class="icon-slot"><UiIcon name="settings" /></span>
+      </a>
     {/if}
     {#if soundToggle}
       <SoundToggle />
@@ -39,6 +44,12 @@
     gap: 14px;
     padding: calc(14px + var(--safe-top)) calc(18px + var(--safe-right)) 10px calc(18px + var(--safe-left));
     flex: 0 0 auto;
+  }
+  .icon-slot {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
   }
   .heading {
     display: flex;

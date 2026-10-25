@@ -1,6 +1,7 @@
 <script>
   import { page } from '$app/state';
   import GameShell from '$lib/components/GameShell.svelte';
+  import UiIcon from '$lib/components/UiIcon.svelte';
   import PenguinCodeGame from '$lib/penguin-code/PenguinCodeGame.svelte';
   import { t } from '$lib/stores/locale';
   import { getPenguinLevel, getPenguinWorld } from '$lib/penguin-code/levels.js';
@@ -36,7 +37,7 @@
     {/key}
   {:else}
     <div class="lockpanel glass">
-      <span class="lockicon" aria-hidden="true">🔒</span>
+      <span class="lockicon" aria-hidden="true"><UiIcon name="lock" /></span>
       <p>{$t('penguinCodeLocked')}</p>
       <a class="btn primary" href="/games/penguin-code">{$t('levelSelect')}</a>
     </div>
@@ -56,8 +57,9 @@
     text-align: center;
   }
   .lockicon {
-    font-size: 30px;
-    line-height: 1;
+    display: block;
+    width: 30px;
+    height: 30px;
   }
   .lockpanel p {
     color: var(--ink-soft);

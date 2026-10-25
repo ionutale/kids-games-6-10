@@ -114,14 +114,15 @@ describe('penguin level data', () => {
 describe('penguin simulation', () => {
   it('walks one cell per command and collects fish in order', () => {
     const level = PENGUIN_LEVELS[0];
-    const run = simulateProgram(level, ['D', 'D']);
+    const run = simulateProgram(level, ['D', 'D', 'R']);
 
     expect(run.status).toBe('incomplete');
     expect(run.reason).toBe(null);
     expect(run.collected).toEqual(['4-6']);
     expect(run.path).toEqual([
-      { r: 2, c: 6 },
-      { r: 3, c: 6 },
+      { r: 2, c: 5 },
+      { r: 3, c: 5 },
+      { r: 4, c: 5 },
       { r: 4, c: 6 },
     ]);
   });
@@ -208,12 +209,18 @@ describe('penguin simulation', () => {
   });
 
   it('wins level 1 with its shortest program', () => {
-    const run = simulateProgram(PENGUIN_LEVELS[0], ['D', 'D', 'D']);
+    const level = PENGUIN_LEVELS[0];
+    const shortest = ['D', 'D', 'R', 'D'];
+    const run = simulateProgram(level, shortest);
 
     expect(run.status).toBe('win');
     expect(run.reason).toBe(null);
-    expect(run.path.at(-1)).toEqual(PENGUIN_LEVELS[0].goal);
+    expect(run.path.at(-1)).toEqual(level.goal);
     expect(run.collected).toHaveLength(1);
+    expect(run.collected).toEqual(['4-6']);
+    expect(solveLevel(level)).toEqual({ solvable: true, par: 4 });
+    expect(shortest).toHaveLength(solveLevel(level).par);
+    expect(level.maxCommands).toBe(level.par + 4);
     expect(COMMANDS).toContain('U');
     expect(COMMANDS).toContain('D');
     expect(COMMANDS).toContain('L');
@@ -221,7 +228,7 @@ describe('penguin simulation', () => {
   });
 
   it('ends incomplete when the program runs out before the goal', () => {
-    const run = simulateProgram(PENGUIN_LEVELS[0], ['D', 'D', 'U']);
+    const run = simulateProgram(PENGUIN_LEVELS[0], ['D', 'D', 'R']);
     expect(run.status).toBe('incomplete');
     expect(run.reason).toBe(null);
     expect(run.collected).toEqual(['4-6']);

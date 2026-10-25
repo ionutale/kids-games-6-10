@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import GameShell from '$lib/components/GameShell.svelte';
+  import UiIcon from '$lib/components/UiIcon.svelte';
   import { t } from '$lib/stores/locale';
   import { PENGUIN_WORLD_COUNT, getPenguinWorld, worldLevels } from '$lib/penguin-code/levels.js';
   import {
@@ -37,7 +38,7 @@
         <h2>{$t(world.nameKey)}</h2>
         <span class="wscore">{stars} / {levels.length * 3} ★</span>
       </div>
-      {#if !unlocked}<span class="lock" aria-hidden="true">🔒</span>{/if}
+      {#if !unlocked}<span class="lock" aria-hidden="true"><UiIcon name="lock" /></span>{/if}
     </section>
 
     {#if unlocked}
@@ -57,7 +58,7 @@
       </section>
     {:else}
       <section class="lockedpanel glass">
-        <span class="lockicon" aria-hidden="true">🔒</span>
+        <span class="lockicon" aria-hidden="true"><UiIcon name="lock" /></span>
         <p>{$t('penguinCodeLocked')}</p>
         <a class="btn ghost" href="/games/penguin-code">{$t('levelSelect')}</a>
       </section>
@@ -115,7 +116,9 @@
     letter-spacing: 0.6px;
   }
   .lock {
-    font-size: 26px;
+    display: block;
+    width: 26px;
+    height: 26px;
     filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.4));
     flex: 0 0 auto;
   }
@@ -204,8 +207,9 @@
     text-align: center;
   }
   .lockicon {
-    font-size: 34px;
-    line-height: 1;
+    display: block;
+    width: 34px;
+    height: 34px;
   }
   .lockedpanel p {
     color: var(--ink-soft);

@@ -1,6 +1,8 @@
 <script>
   import { onMount } from 'svelte';
   import GameShell from '$lib/components/GameShell.svelte';
+  import UiIcon from '$lib/components/UiIcon.svelte';
+  import PenguinArt from '$lib/penguin-code/PenguinArt.svelte';
   import { t } from '$lib/stores/locale';
   import {
     PENGUIN_LEVEL_COUNT,
@@ -39,7 +41,7 @@
 <GameShell backHref="/" title={$t('penguinCodeName')}>
   <div class="landing">
     <section class="hero glass">
-      <span class="heroicon" aria-hidden="true">🐧</span>
+      <span class="heroicon" aria-hidden="true"><PenguinArt name="penguin" /></span>
       <div class="herotext">
         <span class="pill">
           {$t(currentWorld.nameKey)} · {$t('currentLevel')}
@@ -49,7 +51,8 @@
         <p>{$t('penguinCodeDesc')}</p>
       </div>
       <a class="btn primary hero-play" href={`/games/penguin-code/play/${current}`}>
-        ▶ {$t('playLevel', { n: current })}
+        <span class="ctaicon"><UiIcon name="play" /></span>
+        {$t('playLevel', { n: current })}
       </a>
     </section>
 
@@ -81,12 +84,14 @@
                 {/each}
               </span>
               <span class="wstars">{penguinWorldStars(progress, world.id)} / 15 ★</span>
-              {#if complete}<span class="badge" aria-hidden="true">🎓</span>{/if}
+              {#if complete}
+                <span class="badge" aria-hidden="true"><UiIcon name="trophy" /></span>
+              {/if}
             </a>
           {:else}
             <div class="wcard locked" style:--accent={world.accent} aria-disabled="true">
               <span class="wname">{$t(world.nameKey)}</span>
-              <span class="lockicon" aria-hidden="true">🔒</span>
+              <span class="lockicon" aria-hidden="true"><UiIcon name="lock" /></span>
               <span class="lockmsg">{$t('penguinCodeLocked')}</span>
             </div>
           {/if}
@@ -96,12 +101,12 @@
 
     <section class="howrow">
       <article class="howcard glass">
-        <span class="howicon" aria-hidden="true">💡</span>
+        <span class="howicon" aria-hidden="true"><UiIcon name="bulb" /></span>
         <h3>{$t('howToPlay')}</h3>
         <p>{$t('penguinCodeHowBody')}</p>
       </article>
       <article class="howcard glass">
-        <span class="howicon" aria-hidden="true">⭐</span>
+        <span class="howicon" aria-hidden="true"><UiIcon name="star" /></span>
         <h3>{$t('penguinCodeGoal')}</h3>
         <p>{$t('penguinCodeMore')}</p>
       </article>
@@ -127,8 +132,9 @@
     border-color: rgba(94, 234, 212, 0.26);
   }
   .heroicon {
-    font-size: 66px;
-    line-height: 1;
+    display: block;
+    width: 66px;
+    height: 66px;
     filter: drop-shadow(0 0 22px rgba(94, 234, 212, 0.55));
     flex: 0 0 auto;
   }
@@ -159,6 +165,12 @@
     flex: 0 0 auto;
     padding: 14px 22px;
     font-size: 17px;
+  }
+  .ctaicon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: -2px;
   }
   @media (max-width: 680px) {
     .hero {
@@ -287,12 +299,15 @@
     position: absolute;
     top: 8px;
     right: 10px;
-    font-size: 15px;
+    display: block;
+    width: 18px;
+    height: 18px;
     filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.55));
   }
   .lockicon {
-    font-size: 22px;
-    line-height: 1;
+    display: block;
+    width: 22px;
+    height: 22px;
   }
   .lockmsg {
     font-size: 10.5px;
@@ -318,8 +333,9 @@
     border-radius: var(--radius);
   }
   .howicon {
-    font-size: 24px;
-    line-height: 1;
+    display: block;
+    width: 24px;
+    height: 24px;
   }
   .howcard h3 {
     font-size: 14px;
