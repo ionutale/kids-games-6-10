@@ -27,7 +27,7 @@ export const NUMBER_ICE_LEVELS = [
   { id: 7, world: 2, slot: 2, size: 5, target: 12, goal: 17, moves: 9, par: 5, seed: 700085 },
   { id: 8, world: 2, slot: 3, size: 5, target: 12, goal: 18, moves: 9, par: 5, seed: 800089 },
   { id: 9, world: 2, slot: 4, size: 5, target: 13, goal: 18, moves: 9, par: 5, seed: 900093 },
-  { id: 10, world: 2, slot: 5, size: 5, target: 13, goal: 20, moves: 11, par: 7, seed: 1000097 },
+  { id: 10, world: 2, slot: 5, size: 5, target: 13, goal: 20, moves: 10, par: 6, seed: 1000097 },
   { id: 11, world: 3, slot: 1, size: 6, target: 13, goal: 20, moves: 9, par: 5, seed: 1100127 },
   { id: 12, world: 3, slot: 2, size: 6, target: 14, goal: 21, moves: 10, par: 6, seed: 1200131 },
   { id: 13, world: 3, slot: 3, size: 6, target: 14, goal: 22, moves: 10, par: 6, seed: 1300135 },

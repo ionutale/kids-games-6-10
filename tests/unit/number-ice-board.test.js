@@ -47,6 +47,46 @@ function playLevel(level, moveBudget = level.moves) {
   return { cleared, moves, board };
 }
 
+/** Find a 3-tile sum, then a 2-tile sum; never a 4-tile sum. */
+function findSmallSelection(board, target) {
+  const length = board.length;
+  for (let a = 0; a < length - 2; a++) {
+    for (let b = a + 1; b < length - 1; b++) {
+      for (let c = b + 1; c < length; c++) {
+        if (board[a] + board[b] + board[c] === target) return [a, b, c];
+      }
+    }
+  }
+  for (let a = 0; a < length - 1; a++) {
+    for (let b = a + 1; b < length; b++) {
+      if (board[a] + board[b] === target) return [a, b];
+    }
+  }
+  return null;
+}
+
+/** Play without ever using a four-tile sum, like a child who only spots 2-3. */
+function playLevelWithoutFours(level) {
+  const rng = createRng(level.seed);
+  let board = createBoard(level.size, rng);
+  let cleared = 0;
+  let moves = 0;
+
+  while (cleared < level.goal && moves < level.moves) {
+    let selection = findSmallSelection(board, level.target);
+    if (!selection) {
+      board = ensureSelection(board, level.target, rng);
+      selection = findSmallSelection(board, level.target);
+    }
+    if (!selection) break;
+    cleared += selection.length;
+    board = dropAndRefill(board, selection, level.size, rng);
+    moves++;
+  }
+
+  return { cleared, moves };
+}
+
 describe('Number Ice PRNG and boards', () => {
   it('creates a deterministic generator that only emits floats in [0, 1)', () => {
     const a = createRng(1234);
@@ -284,6 +324,26 @@ describe('every Number Ice level is completable', () => {
     for (const level of NUMBER_ICE_LEVELS) {
       expect(level.par).toBeLessThanOrEqual(level.moves - 4);
       expect(level.moves - level.par).toBe(4);
+    }
+  });
+
+  it('requires at least three cleared tiles per move for three stars', () => {
+    for (const level of NUMBER_ICE_LEVELS) {
+      expect(
+        level.goal / level.par,
+        `level ${level.id} needs ${(level.goal / level.par).toFixed(2)} tiles per move`,
+      ).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('is completable using only two- and three-tile selections', () => {
+    for (const level of NUMBER_ICE_LEVELS) {
+      const result = playLevelWithoutFours(level);
+      expect(
+        result.cleared,
+        `level ${level.id} cleared ${result.cleared}/${level.goal} without four-tile sums`,
+      ).toBeGreaterThanOrEqual(level.goal);
+      expect(result.moves).toBeLessThanOrEqual(level.moves);
     }
   });
 });
