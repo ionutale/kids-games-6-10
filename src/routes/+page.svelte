@@ -18,10 +18,17 @@
     isPenguinWorldComplete,
     loadPenguinProgress,
   } from '$lib/penguin-code/progress.js';
+  import { NUMBER_ICE_WORLDS } from '$lib/number-ice/levels.js';
+  import {
+    emptyNumberIceProgress,
+    isNumberIceWorldComplete,
+    loadNumberIceProgress,
+  } from '$lib/number-ice/progress.js';
 
   let progress = $state(emptyProgress());
   let auroraProgress = $state(emptyAuroraProgress());
   let penguinProgress = $state(emptyPenguinProgress());
+  let numberIceProgress = $state(emptyNumberIceProgress());
   const currentWorldId = $derived(getWorld(nextLevel(progress)).id);
   const mastered = $derived(isCampaignMastered(progress));
 
@@ -29,6 +36,7 @@
     progress = loadProgress();
     auroraProgress = loadAuroraProgress();
     penguinProgress = loadPenguinProgress();
+    numberIceProgress = loadNumberIceProgress();
   });
 </script>
 
@@ -81,6 +89,17 @@
       <span class="mini" aria-hidden="true">
         {#each PENGUIN_WORLDS as world (world.id)}
           <span class="dot" class:done={isPenguinWorldComplete(penguinProgress, world.id)}></span>
+        {/each}
+      </span>
+    </a>
+
+    <a class="tile numberice" href="/games/number-ice">
+      <span class="tileicon" aria-hidden="true">🧊</span>
+      <span class="tilename">{$t('numberIceName')}</span>
+      <span class="tiledesc">{$t('numberIceDesc')}</span>
+      <span class="mini" aria-hidden="true">
+        {#each NUMBER_ICE_WORLDS as world (world.id)}
+          <span class="dot" class:done={isNumberIceWorldComplete(numberIceProgress, world.id)}></span>
         {/each}
       </span>
     </a>
@@ -188,6 +207,13 @@
     box-shadow:
       0 26px 60px rgba(0, 0, 0, 0.4),
       0 0 32px rgba(148, 163, 255, 0.12);
+  }
+  .tile.numberice:hover {
+    transform: translateY(-4px);
+    border-color: rgba(186, 230, 253, 0.5);
+    box-shadow:
+      0 26px 60px rgba(0, 0, 0, 0.4),
+      0 0 32px rgba(186, 230, 253, 0.14);
   }
   .tile:active {
     transform: scale(0.985);
