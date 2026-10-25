@@ -12,15 +12,23 @@
   } from '$lib/frost-breaker/progress.js';
   import { AURORA_WORLDS } from '$lib/aurora/levels.js';
   import { emptyAuroraProgress, isAuroraWorldComplete, loadAuroraProgress } from '$lib/aurora/progress.js';
+  import { PENGUIN_WORLDS } from '$lib/penguin-code/levels.js';
+  import {
+    emptyPenguinProgress,
+    isPenguinWorldComplete,
+    loadPenguinProgress,
+  } from '$lib/penguin-code/progress.js';
 
   let progress = $state(emptyProgress());
   let auroraProgress = $state(emptyAuroraProgress());
+  let penguinProgress = $state(emptyPenguinProgress());
   const currentWorldId = $derived(getWorld(nextLevel(progress)).id);
   const mastered = $derived(isCampaignMastered(progress));
 
   onMount(() => {
     progress = loadProgress();
     auroraProgress = loadAuroraProgress();
+    penguinProgress = loadPenguinProgress();
   });
 </script>
 
@@ -62,6 +70,17 @@
       <span class="mini" aria-hidden="true">
         {#each AURORA_WORLDS as world (world.id)}
           <span class="dot" class:done={isAuroraWorldComplete(auroraProgress, world.id)}></span>
+        {/each}
+      </span>
+    </a>
+
+    <a class="tile penguin" href="/games/penguin-code">
+      <span class="tileicon" aria-hidden="true">🐧</span>
+      <span class="tilename">{$t('penguinCodeName')}</span>
+      <span class="tiledesc">{$t('penguinCodeDesc')}</span>
+      <span class="mini" aria-hidden="true">
+        {#each PENGUIN_WORLDS as world (world.id)}
+          <span class="dot" class:done={isPenguinWorldComplete(penguinProgress, world.id)}></span>
         {/each}
       </span>
     </a>
@@ -162,6 +181,13 @@
     box-shadow:
       0 26px 60px rgba(0, 0, 0, 0.4),
       0 0 32px rgba(94, 234, 212, 0.12);
+  }
+  .tile.penguin:hover {
+    transform: translateY(-4px);
+    border-color: rgba(148, 163, 255, 0.5);
+    box-shadow:
+      0 26px 60px rgba(0, 0, 0, 0.4),
+      0 0 32px rgba(148, 163, 255, 0.12);
   }
   .tile:active {
     transform: scale(0.985);

@@ -1,14 +1,16 @@
 # Kids Games 6–10
 
-Big-kid games for ages 6–10. Frost Breaker and Aurora Mirrors.
+Big-kid games for ages 6–10. Frost Breaker, Aurora Mirrors, and Penguin Code.
 
 Frost Breaker: aim ice poppers at a frozen sculpture, chain the glowing crystal cores, and clear 90% before the pods run out. The shipped campaign runs 10 worlds of 5 levels each: 20 hand-built silhouettes and 30 remixes, four pod behaviours, 90/95/100 star thresholds, a gentle “so close” retry, and no lost progress.
 
 Aurora Mirrors: rotate mirrors to bend a light beam through an ice grid and wake every crystal. The campaign runs six worlds of five handcrafted levels, with par-move three-star goals, sequential world unlocks, and its own save file.
 
+Penguin Code: build a short sequence of arrow commands and guide a penguin around walls and water to every fish and the igloo. Six worlds of five levels, a command limit, and stars for shorter programs.
+
 ## Status
 
-Playable production games: hub + Frost Breaker (50 levels) + Aurora Mirrors (30 levels), six locales, PWA offline, generated audio.
+Playable production games: hub + Frost Breaker (50 levels) + Aurora Mirrors (30 levels) + Penguin Code (30 levels), six locales, PWA offline, generated audio.
 
 The throwaway one-sculpture feel test is preserved on the `prototype/frost-breaker` branch and in `prototype/frost-breaker.html`.
 
@@ -35,6 +37,9 @@ Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `
 
 - **Hub** (`/`) — frosted-aurora game launcher, campaign progress, and a link to settings.
 - **Settings** (`/settings`) — persisted music and sound-effects volume, mute, and a six-language picker.
+- **Penguin Code** (`/games/penguin-code`) — six-world command-programming game with its own `penguinCode1` save.
+- **Penguin Code world** (`/games/penguin-code/world/[1–6]`) — five level nodes, command limits, stars, and sequential world locks.
+- **Penguin Code game** (`/games/penguin-code/play/[1–30]`) — 7×7 grid, arrow program builder, step-by-step penguin run, fish and water rules, undo/reset, and a star result.
 - **Aurora Mirrors** (`/games/aurora-mirrors`) — six-world map with sequential unlocks, par-move stars, and its own `auroraMirrors1` save.
 - **Aurora world** (`/games/aurora-mirrors/world/[1–6]`) — five level nodes, stars, par, and world unlock state.
 - **Aurora game** (`/games/aurora-mirrors/play/[1–30]`) — 7×7 beam puzzle with tap-rotate mirrors, undo/reset, live crystals, all-edge emitters, and a best-score result card.
@@ -47,6 +52,7 @@ Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `
 - **Progress** (`src/lib/frost-breaker/progress.js`) — fresh `frostBreaker2` save key; older star data is deliberately ignored. Completing all five levels of a world at 90% or better opens the next world.
 - **Engine** (`src/lib/frost-breaker/engine.js`, `walls.js`) — deterministic cell fracture, connected-mass collapse, spike/ghost/copter/split behaviours, outer side rails and ceiling with an open bottom, 0–2 interior bumpers per level, bank-shot aim preview, and a short-fuse split pod that fans into three. Particles and screen shake.
 - **Aurora rules** (`src/lib/aurora/beam.js`, `levels.js`) — pure beam reflection, wall blocking, 30 validated levels, a full-orientation solver, sequential world unlocks, and par-move star thresholds.
+- **Penguin Code rules** (`src/lib/penguin-code/rules.js`, `levels.js`) — step simulator, BFS command solver, wall/water/fish rules, and 30 validated levels.
 - **Audio** (`src/lib/frost-breaker/audio.js`, `static/audio/`) — Studio-generated SFX and three seamless Studio music loops: garden, frost, royal, with a procedural WebAudio fallback. See [docs/audio.md](docs/audio.md).
 - **Locales** — en, it, ro, de, fr, zh; every key is parity-tested.
 - **PWA** — static adapter, service worker precache, network-first navigation, offline deep links, and a boot watchdog with a one-tap repair for stale caches.
@@ -93,6 +99,7 @@ The display name is **Kids Games 6–10**. The repository directory and package 
 
 - Owner playtest with a 6–10 year old; tune pod counts and core placement from notes.
 - Playtest the 30-level Aurora Mirrors campaign and tune the later-world mirror density.
+- Playtest Penguin Code’s later worlds and tune command limits and water density.
 - Final ice-sculpture art pass (the current silhouettes are deliberately blocky cell mosaics).
 - Attach `kids-games-6-10.aiu-media.com` to the Worker.
 - End-to-end browser coverage for hub → world map → world → game → result → next level.
