@@ -10,7 +10,10 @@ export default defineConfig({
       injectRegister: null,
       kit: {
         adapterFallback: 'index.html',
-        spa: { fallbackMapping: '/', fallbackRevision: () => 'frost-breaker-spa' },
+        // Let the plugin derive the fallback revision from _app/version.json.
+        // A constant revision makes the precached HTML immortal across deploys,
+        // so an old document keeps requesting chunks that no longer exist.
+        spa: { fallbackMapping: '/' },
       },
       manifest: {
         name: 'Kids Games 6–10',
@@ -31,12 +34,17 @@ export default defineConfig({
         navigateFallback: null,
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/kids-games-6-10\.aiu-media\.com\/(?:$|games\/|settings)/,
-            handler: 'NetworkFirst',
+            // Navigations always go to the network when it is available.
+            // The precached shell is only a fallback for offline launches.
+            // Caching HTML in a runtime cache can pair an old document with
+            // new (or deleted) hashed chunks after a deploy.
+            urlPattern: ({ url, sameOrigin }) =>
+              sameOrigin &&
+              (url.pathname === '/' ||
+                url.pathname.startsWith('/games/') ||
+                url.pathname.startsWith('/settings')),
+            handler: 'NetworkOnly',
             options: {
-              cacheName: 'frost-pages',
-              networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 20 },
               precacheFallback: { fallbackURL: '/' },
             },
           },

@@ -13,6 +13,7 @@ Shared shell files covered by the rule:
 
 - `src/lib/components/GameShell.svelte`
 - `src/lib/components/SoundToggle.svelte`
+- `src/app.html` (boot screen)
 
 ## Guard test
 
@@ -22,7 +23,7 @@ Run before merging any Penguin Code change:
 pnpm vitest run tests/unit/penguin-code-no-emoji.test.js
 ```
 
-The test scans every `.svelte` and `.js` file under `src/lib/penguin-code`, every `.svelte` file under `src/routes/games/penguin-code`, and the two shared shell files above. It fails with a file path and 1-based line number when it finds a Unicode `Extended_Pictographic` character or a variation selector, joiner, or keycap component (U+FE0E, U+FE0F, U+200D, U+20E3).
+The test scans every `.svelte` and `.js` file under `src/lib/penguin-code`, every `.svelte` file under `src/routes/games/penguin-code`, and the shared shell files above. It fails with a file path and 1-based line number when it finds a Unicode `Extended_Pictographic` character or a variation selector, joiner, or keycap component (U+FE0E, U+FE0F, U+200D, U+20E3).
 
 Plain text symbols such as `★`, `←`, `↑`, `↓`, `→` are allowed. There is no allowlist that weakens the emoji check.
 

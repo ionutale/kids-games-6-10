@@ -5,7 +5,11 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
-const SHELL_FILES = ['src/lib/components/GameShell.svelte', 'src/lib/components/SoundToggle.svelte'];
+const SHELL_FILES = [
+  'src/app.html',
+  'src/lib/components/GameShell.svelte',
+  'src/lib/components/SoundToggle.svelte',
+];
 
 const SCAN_DIRS = [
   { dir: 'src/lib/penguin-code', extensions: ['.svelte', '.js'] },

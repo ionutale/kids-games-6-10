@@ -41,9 +41,15 @@
         text-align: center;
       }
       .boot-icon {
-        font-size: 46px;
-        line-height: 1;
+        width: 46px;
+        height: 46px;
+        color: #7dd3fc;
         filter: drop-shadow(0 0 18px rgba(125, 211, 252, 0.6));
+      }
+      .boot-icon svg {
+        display: block;
+        width: 100%;
+        height: 100%;
       }
       .boot-spinner {
         width: 30px;
@@ -87,37 +93,13 @@
         }
       }
     </style>
-    %sveltekit.head%
-  </head>
-  <body data-sveltekit-preload-data="hover">
-    <div id="boot-screen" role="status" aria-live="polite">
-      <div class="boot-card">
-        <span class="boot-icon" aria-hidden="true">❄️</span>
-        <span class="boot-spinner" aria-hidden="true"></span>
-        <p id="boot-note">Loading…</p>
-        <button id="boot-repair" type="button" hidden>Repair &amp; reload</button>
-      </div>
-    </div>
-    <div style="display: contents">%sveltekit.body%</div>
     <script>
       (() => {
-        const screen = document.getElementById('boot-screen');
-        const note = document.getElementById('boot-note');
-        const repair = document.getElementById('boot-repair');
-        const timer = window.setTimeout(() => {
-          screen.classList.add('failed');
-          note.textContent = 'Still loading? Repair the app.';
-          repair.hidden = false;
-        }, 8000);
+        const RECOVERY_KEY = 'frost-recovery-pending';
+        const STALE_BUILD_ERROR =
+          /valid JavaScript MIME type|MIME type of ['"]?text\/html|disallowed MIME type|Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|ChunkLoadError/i;
 
-        window.__frostBooted = () => {
-          window.clearTimeout(timer);
-          if (screen) screen.hidden = true;
-        };
-
-        repair.addEventListener('click', async () => {
-          repair.disabled = true;
-          repair.textContent = 'Repairing…';
+        async function repair() {
           try {
             if ('serviceWorker' in navigator) {
               const registrations = await navigator.serviceWorker.getRegistrations();
@@ -131,6 +113,85 @@
             // Reload even if the browser blocks cleanup.
           }
           location.reload();
+        }
+
+        window.__frostRepair = repair;
+
+        window.addEventListener('unhandledrejection', (event) => {
+          const reason = event.reason;
+          const message = reason && (reason.message || String(reason));
+          if (typeof message !== 'string' || !STALE_BUILD_ERROR.test(message)) return;
+          if (!navigator.onLine) return;
+
+          try {
+            // Recover once per loaded document. If the reload fails again,
+            // leave the manual repair button to the user instead of looping.
+            if (sessionStorage.getItem(RECOVERY_KEY)) return;
+            sessionStorage.setItem(RECOVERY_KEY, '1');
+          } catch {
+            return;
+          }
+
+          event.preventDefault();
+          repair();
+        });
+      })();
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div id="boot-screen" role="status" aria-live="polite">
+      <div class="boot-card">
+        <span class="boot-icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 48 48"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+          >
+            <path d="M24 4v40M6.7 14l34.6 20M41.3 14L6.7 34" />
+            <path d="M24 4l-4.5 4.5M24 4l4.5 4.5M24 44l-4.5-4.5M24 44l4.5-4.5" />
+            <path d="M6.7 14l6.2-.8M6.7 14l2.6 5.7M41.3 34l-6.2.8M41.3 34l-2.6-5.7" />
+            <path d="M41.3 14l-6.2-.8M41.3 14l-2.6 5.7M6.7 34l6.2.8M6.7 34l2.6-5.7" />
+          </svg>
+        </span>
+        <span class="boot-spinner" aria-hidden="true"></span>
+        <p id="boot-note">Loading…</p>
+        <button id="boot-repair" type="button" hidden>Repair &amp; reload</button>
+      </div>
+    </div>
+    <div style="display: contents">%sveltekit.body%</div>
+    <script>
+      (() => {
+        const screen = document.getElementById('boot-screen');
+        const note = document.getElementById('boot-note');
+        const repairButton = document.getElementById('boot-repair');
+        const timer = window.setTimeout(() => {
+          screen.classList.add('failed');
+          note.textContent = 'Still loading? Repair the app.';
+          repairButton.hidden = false;
+        }, 8000);
+
+        window.__frostBooted = () => {
+          window.clearTimeout(timer);
+          try {
+            sessionStorage.removeItem('frost-recovery-pending');
+          } catch {
+            // Storage can be unavailable; boot still succeeds.
+          }
+          if (screen) screen.hidden = true;
+        };
+
+        repairButton.addEventListener('click', () => {
+          repairButton.disabled = true;
+          repairButton.textContent = 'Repairing…';
+          try {
+            sessionStorage.removeItem('frost-recovery-pending');
+          } catch {
+            // Storage can be unavailable; repair still succeeds.
+          }
+          window.__frostRepair?.();
         });
       })();
     </script>
