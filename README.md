@@ -33,7 +33,7 @@ pnpm dev
 | `pnpm lint`    | Prettier check                                                    |
 | `pnpm format`  | Prettier write                                                    |
 
-Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `pnpm deploy`; `wrangler.jsonc` serves `build/` with SPA fallback. The custom domain is `kids-games-6-10.aiu-media.com` once attached.
+Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `pnpm deploy`; `wrangler.jsonc` serves `build/` with SPA fallback. The custom domain is `kids-games-6-10.aiu-media.com`.
 
 ## What is in the box
 
@@ -62,7 +62,7 @@ Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `
 - **Penguin Code rules** (`src/lib/penguin-code/rules.js`, `levels.js`) — step simulator, BFS command solver, wall/water/fish rules, and 30 validated levels.
 - **Audio** (`src/lib/frost-breaker/audio.js`, `static/audio/`) — Studio-generated SFX and three seamless Studio music loops: garden, frost, royal, with a procedural WebAudio fallback. See [docs/audio.md](docs/audio.md).
 - **Locales** — en, it, ro, de, fr, zh; every key is parity-tested.
-- **PWA** — static adapter, service worker precache, network-first navigation, offline deep links, and a boot watchdog with a one-tap repair for stale caches.
+- **PWA** — static adapter, build-versioned service worker precache, network-only navigation with a precached shell for offline deep links, and automatic stale-build recovery plus a one-tap repair.
 
 ## Layout
 
@@ -70,9 +70,11 @@ Requires Node 20+ and pnpm. Deploy the static build to Cloudflare Workers with `
 src/
   app.css                     design tokens + frosted-aurora shell
   lib/
-    components/               SoundToggle, GameShell, FrostGame, ShapePreview, WinOverlay
+    components/               SoundToggle, GameShell, UiIcon, FrostGame, ShapePreview, WinOverlay
     frost-breaker/            audio, engine, grid, levels, progress, rules, shapes, walls
     number-ice/               board rules, levels, NumberIceGame, progress
+    penguin-code/             rules, levels, PenguinCodeGame, PenguinArt, progress
+    aurora/                   beam rules, levels, AuroraGame, progress
     i18n/messages.js          six-locale catalogs
     stores/                   locale + settings
   routes/
@@ -83,10 +85,17 @@ src/
     games/number-ice/         number-matching game
     games/number-ice/world/[n]/      world page
     games/number-ice/play/[level]/   game
+    games/penguin-code/       command-programming game
+    games/penguin-code/world/[n]/    world page
+    games/penguin-code/play/[level]/ game
+    games/aurora-mirrors/     beam puzzle game
+    games/aurora-mirrors/world/[n]/  world page
+    games/aurora-mirrors/play/[level]/ game
 static/audio/                 generated SFX + three music loops
 static/icons/                 app icon
-tests/unit/                   rules, levels, progress, stars, walls, locale parity
+tests/unit/                   rules, levels, progress, stars, walls, locale parity, PWA config
 docs/audio.md                 sound provenance + prompts
+docs/playtest.md              playtest plan and tuning scorecard
 prototype/frost-breaker.html  throwaway feel test
 ```
 
@@ -111,10 +120,11 @@ The display name is **Kids Games 6–10**. The repository directory and package 
 
 ## Next
 
-- Owner playtest with a 6–10 year old; tune pod counts and core placement from notes.
-- Playtest the 30-level Aurora Mirrors campaign and tune the later-world mirror density.
-- Playtest Penguin Code’s later worlds and tune command limits and water density.
-- Playtest Number Ice’s later worlds and tune targets, goals, move budgets, and par.
+- Run the [playtest plan](docs/playtest.md) with a 6–10 year old and record notes in the scorecard.
+- Tune Frost Breaker pod counts and core placement from playtest notes.
+- Tune Aurora Mirrors’ later-world mirror density.
+- Tune Penguin Code’s later-world command limits and water density.
+- Tune Number Ice’s later-world targets, goals, move budgets, and par.
 - Final ice-sculpture art pass (the current silhouettes are deliberately blocky cell mosaics).
-- Attach `kids-games-6-10.aiu-media.com` to the Worker.
-- End-to-end browser coverage for hub → world map → world → game → result → next level.
+- End-to-end browser coverage for hub → world map → world → game → result → next level, plus stale-build recovery and offline launch.
+- Physical iOS and Android checks for install, offline launch, audio unlock, safe areas, and touch targets.
